@@ -101,13 +101,15 @@ def view_stats(name):
         secure_filename(name),
     )
     stats = formfyxer.parse_form(path_to_file, normalize=True, use_spot=False)
+    word_count = len(stats.get("text").split(" "))
+    difficult_word_count = textstat.difficult_words(stats.get("text"))
     return f"""
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>File statistics for { name }</title>
+    <title>Statistics for <span class="word-wrap">{ name }</span></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
     <style>
     .suffolk-blue {{
@@ -129,12 +131,13 @@ def view_stats(name):
 </nav>    
 
 <main style="max-width: 500px; margin: auto;">
-<h1 class="pb-2 border-bottom">File statistics for { name }</h1>
+<h1 class="pb-2 border-bottom">File statistics for <span class="text-break">{ name }</span></h1>
 <table class="table">
     <thead>
     <tr>
       <th scope="col">Statistic name</th>
       <th scope="col">Value</th>
+      <th scope="col">Benchmark</th>
     </tr>
     </thead>
     <tbody>
@@ -142,38 +145,65 @@ def view_stats(name):
     <th scope="row">
     Consensus reading grade level
     </th>
-    <td>{ stats.get("reading grade level") }</td>
+    <td>Grade { int(stats.get("reading grade level")) }</td>
+    <td>Target is <a href="https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/style_guide/readability#target-reading-level">4th-6th grade</a></td>
     </tr>
     <tr>
     <th scope="row">
     Number of pages
     </th>
     <td>{ stats.get("pages") }</td>
+    <td></td>
     </tr>
     <tr>
     <th scope="row">
     Number of fields
     </th>
     <td>{ len(stats.get("fields",[])) }</td>
+    <td></td>    
     </tr>
     <tr>
     <th scope="row">
     Average number of fields per page
     </th>
-    <td>{ stats.get("avg fields per page") }</td>
+    <td>{float(stats.get("avg fields per page",0)):.1f}</td>
+    <td>Target is < 15</td>
     </tr>
     <tr>
     <th scope="row">
-    Word count
+    Number of sentences
     </th>
-    <td>{ len(stats.get("text").split(" ")) }</td>
+    <td>{ stats.get("number of sentences") }</td>
+    <td></td>
+    </tr>
+    <tr>
+    <th scope="row">
+    Word count / page
+    </th>
+    <td>{ word_count } ({float(word_count/stats.get("pages",1.0)):.1f})</td>
+    <td>Users <a href="https://www.nngroup.com/articles/how-little-do-users-read/">read as little as 20% of the content</a> on a longer page. Try to keep word count to 110 words to have your reader absorb at least 50%.</td>
     </tr>
     <tr>
     <th scope="row">
     Number of "difficult words" (includes inflections of some "easy" words)
     </th>
-    <td>{ textstat.difficult_words(stats.get("text")) }</td>
-    </tr>    
+    <td>{ difficult_word_count } <br/> ({difficult_word_count/word_count * 100:.1f}%)</td>
+    <td>Target is < 5%</td>
+    </tr>
+    <tr>
+    <th scope="row">
+    Percent of sentences with passive voice
+    </th>
+    <td>{stats.get("number of passive voice sentences",0) / stats.get("number of sentences",1) * 100:.1f}%</td>
+    <td>Target is < 5%</td>
+    </tr>
+    <tr>
+    <th scope="row">
+    Number of citations
+    </th>
+    <td>{ len(stats.get("citations",[])) }</td>
+    <td>Avoid using citations in court forms.</td>
+    </tr>
     </tbody>
 </table>
 <div class="accordion" id="fullTextAccordion">
@@ -186,6 +216,18 @@ def view_stats(name):
     <div id="flush-collapseOne" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#fullTextAccordion">
       <div class="accordion-body">
         { stats.get("text") }
+      </div>
+    </div>
+  </div>
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="flush-headingTwo">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTwo" aria-expanded="false" aria-controls="flush-collapseTwo">
+        Citations
+      </button>
+    </h2>
+    <div id="flush-collapseOne" class="accordion-collapse collapse" aria-labelledby="flush-headingTwo" data-bs-parent="#fullTextAccordion">
+      <div class="accordion-body">
+        { "<br/>".join(stats.get("citations",[])) }
       </div>
     </div>
   </div>
