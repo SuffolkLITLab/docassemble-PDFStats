@@ -10,6 +10,8 @@ from werkzeug.utils import secure_filename
 import formfyxer
 import textstat
 
+import pandas
+
 UPLOAD_FOLDER = '/tmp'
 ALLOWED_EXTENSIONS = {'pdf'}
 
@@ -22,6 +24,61 @@ app.config['PDFSTAT_UPLOAD_FOLDER'] = UPLOAD_FOLDER
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def minutes_to_hours(minutes:float)->str:
+  if minutes < 2:
+    return "1 minute"
+  if minutes > 60:
+    res = divmod(minutes, 60)
+    return f"{res[0]} hour{'s' if res[0] > 1 else ''} and { res[1] } minute{'s' if res[1] > 1 or res[1] < 1 else ''}"
+  else:
+    return f"{minutes} minute{'s' if minutes > 1 else ''}"
+
+upload_form = '''
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Upload PDF</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
+    <style>
+    .suffolk-blue {
+        background-color: #002e60;
+    }
+    .upload-centered {
+        width: 100%;
+        max-width: 330px;
+        padding: 15px;
+        margin: auto;
+    }
+    </style>
+  </head>
+<body class="text-center">
+<nav class="navbar navbar-dark suffolk-blue">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="https://suffolklitlab.org">
+  <img src="https://apps.suffolklitlab.org/packagestatic/docassemble.MassAccess/lit_logo_light.png?v=0.3.0" alt="Logo" width="30" height="24" class="d-inline-block align-text-top"/>
+  Suffolk LIT Lab
+  </a>
+  </div>
+</nav>    
+<main class="upload-centered">
+    <form method=post enctype=multipart/form-data>
+    <h1 class="h3 mb-3 fw-normal">Upload a PDF</h1>
+
+    <div>
+        <label for="file" class="form-label">PDF file</label>
+        <input class="form-control form-control-md" id="file" name="file" type="file">
+    </div>    
+
+        <button type="submit" class="btn btn-primary mb-3 mt-3">Upload file</button>
+  </form>
+</main>
+</body>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-u1OknCvxWvY5kfmNBILK2hRnQC3Pr17a+RTT6rIHI7NnikvbZlHgTPOOmMi466C8" crossorigin="anonymous"></script>
+</html>
+    '''
 
 @app.route('/pdfstats', methods=['GET', 'POST'])
 @csrf.exempt
@@ -41,54 +98,7 @@ def upload_file():
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['PDFSTAT_UPLOAD_FOLDER'], filename))
             return redirect(url_for('view_stats', name=filename))
-    return '''
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Upload PDF</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
-    <style>
-    .suffolk-blue {
-        background-color: #002e60;
-    }
-    .upload-centered {
-        width: 100%;
-        max-width: 330px;
-        padding: 15px;
-        margin: auto;
-    }
-    body {
-        padding-top: 40px;
-    }
-    </style>
-  </head>
-<body class="text-center">
-<nav class="navbar navbar-dark suffolk-blue">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="https://suffolklitlab.org">
-  <img src="https://apps.suffolklitlab.org/packagestatic/docassemble.MassAccess/lit_logo_light.png?v=0.3.0" alt="Logo" width="30" height="24" class="d-inline-block align-text-top"/>
-  Suffolk LIT Lab
-  </a>
-  </div>
-</nav>    
-<main class="upload-centered">
-    <form method=post enctype=multipart/form-data>
-    <h1 class="h3 mb-3 fw-normal">Upload a PDF</h1>
-
-    <div>
-        <label for="formFileLg" class="form-label">PDF file</label>
-        <input class="form-control form-control-lg" id="file" name="file" type="file">
-    </div>    
-
-        <button type="submit" class="btn btn-primary mb-3">Upload file</button>
-  </form>
-</main>
-</body>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-u1OknCvxWvY5kfmNBILK2hRnQC3Pr17a+RTT6rIHI7NnikvbZlHgTPOOmMi466C8" crossorigin="anonymous"></script>
-</html>
-    '''
+    return upload_form
 
 from flask import send_from_directory
 
@@ -100,7 +110,7 @@ def view_stats(name):
         app.config["PDFSTAT_UPLOAD_FOLDER"],
         secure_filename(name),
     )
-    stats = formfyxer.parse_form(path_to_file, normalize=True, use_spot=False)
+    stats = formfyxer.parse_form(path_to_file, normalize=True, use_spot=False, debug=True)
     word_count = len(stats.get("text").split(" "))
     difficult_word_count = textstat.difficult_words(stats.get("text"))
     return f"""
@@ -114,9 +124,6 @@ def view_stats(name):
     <style>
     .suffolk-blue {{
         background-color: #002e60;
-    }}
-    body {{
-        padding-top: 40px;
     }}
     </style>
   </head>
@@ -141,6 +148,22 @@ def view_stats(name):
     </tr>
     </thead>
     <tbody>
+    <tr>
+    <th scope="row">Time to read</th>
+    <td>
+    About { minutes_to_hours(int(word_count / 150)) }
+    </td>
+    <td>
+    </td>
+    </tr>
+    <tr>
+    <th scope="row">Time to answer</th>
+    <td>
+    About { minutes_to_hours(round(stats.get("time to answer", (0,0))[0])) }, plus or minus { minutes_to_hours(round(stats.get("time to answer", (0,0))[1])) } (1 standard deviation)
+    </td>
+    <td>
+    </td>
+    </tr>
     <tr>
     <th scope="row">
     Consensus reading grade level
@@ -231,7 +254,26 @@ def view_stats(name):
       </div>
     </div>
   </div>
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="flush-headingThree">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseThree" aria-expanded="false" aria-controls="flush-collapseThree">
+        Information about fields
+      </button>
+    </h2>
+    <div id="flush-collapseThree" class="accordion-collapse collapse" aria-labelledby="flush-headingThree" data-bs-parent="#fullTextAccordion">
+      <div class="accordion-body">
+      <p><b>Note: "time to answer" is drawn as a random sample from an assumed normal distribution of times to answer, with a pre-set standard deviation and mean that depends
+      on the answer type and allowed number of characters. It will likely be a different number if you refresh and recalculate.</b></p>
+      { pandas.DataFrame.from_records(stats.get("debug fields")).to_html() }
+      </div>
+    </div>
+  </div>
+
 </div>
+
+
+<a class="btn btn-primary" href="/pdfstats" role="button">Upload a new PDF</a>
+
 </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-u1OknCvxWvY5kfmNBILK2hRnQC3Pr17a+RTT6rIHI7NnikvbZlHgTPOOmMi466C8" crossorigin="anonymous"></script>
