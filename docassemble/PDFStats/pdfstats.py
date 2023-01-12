@@ -26,6 +26,9 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def valid_uuid(file_id):
+    return bool(re.match(r"^[A-Za-z0-9]{8}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{12}$", file_id))
+
 def minutes_to_hours(minutes:float)->str:
   if minutes < 2:
     return "1 minute"
@@ -97,22 +100,48 @@ def upload_file():
             return redirect(request.url)
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['PDFSTAT_UPLOAD_FOLDER'], filename))
-            return redirect(url_for('view_stats', name=filename))
+            intermediate_dir = str(uuid.uuid4())
+            to_path = os.path.join(current_app.config['PDFSTAT_UPLOAD_FOLDER'], intermediate_dir)
+            os.mkdir(to_path)
+            full_path = os.path.join(to_path, filename)
+            file.save(full_path)
+            stats = formfyxer.parse_form(full_path, normalize=True, debug=True, openai_creds=get_config("open ai"), spot_token=get_config("spot token"))
+            with open(os.path.join(to_path, "stats.json"), "w") as stats_file:
+                stats_file.write(json.dumps(stats))
+            return redirect(url_for('view_stats', file_id=intermediate_dir))
     return upload_form
 
 from flask import send_from_directory
 
-@app.route('/pdfstats/view/<filename>')
-def view_stats(filename):
-    if not (filename and allowed_file(filename)):
-        raise Exception("Not a valid filename")
-    path_to_file = os.path.join(
+def get_pdf_from_dir(file_id):
+    path_to_dir = os.path.join(
         app.config["PDFSTAT_UPLOAD_FOLDER"],
-        secure_filename(filename),
+        secure_filename(file_id),
     )
-    stats = formfyxer.parse_form(path_to_file, normalize=True, debug=True, openai_creds=get_config("open ai"), spot_token=get_config("spot token"))
-    title = stats.get('title', filename)
+    for f in os.listdir(path_to_dir):
+        if f.endswith(".pdf"):
+            return f
+    return None
+
+
+@app.route('/download/<file_id>')
+def download_file(file_id):
+    if not (file_id and valid_uuid(file_id)):
+        raise Exception ("Not a valid filename")
+    f = get_pdf_from_dir(file_id)
+    if f:
+        return send_from_directory(directory=app.config["PDFSTAT_UPLOAD_FOLDER"], path=os.path.join(file_id, f))
+    raise Exception("No file uploaded here")
+
+
+@app.route('/view/<file_id>')
+def view_stats(file_id):
+    if not (file_id and valid_uuid(file_id)):
+        raise Exception("Not a valid filename")
+    to_dir = os.path.join(app.config["PDFSTAT_UPLOAD_FOLDER"], file_id)
+    with open(os.path.join(to_dir, "stats.json")) as stats_file:
+        stats = json.loads(stats_file.read())
+    title = stats.get('title', file_id)
     complexity_score = formfyxer.form_complexity(stats)
     word_count = len(stats.get("text").split(" "))
     difficult_word_count = textstat.difficult_words(stats.get("text"))
@@ -142,6 +171,8 @@ def view_stats(filename):
 
 <main style="max-width: 800px; margin-left: auto; margin-right: auto;">
 <h1 class="pb-2 border-bottom text-center">File statistics for <span class="text-break">{ title }</span></h1>
+<p><a href="/pdfstats/download/{file_id}">Download the file</a></p>
+<br/>
 <table class="table text-center">
     <thead>
     <tr>
@@ -335,9 +366,3 @@ def view_stats(filename):
 </html>
     """
 
-#def download_file(name):
-#    return send_from_directory(app.config["PDFSTAT_UPLOAD_FOLDER"], name)
-
-app.add_url_rule(
-    "/pdfstats/view/<name>", endpoint="view_stats", build_only=True
-)
