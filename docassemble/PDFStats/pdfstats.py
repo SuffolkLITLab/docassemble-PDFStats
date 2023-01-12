@@ -1,26 +1,34 @@
 # pre-load
 
-from docassemble.webapp.app_object import app, csrf
-from docassemble.base.util import path_and_mimetype, get_config
-import json
-
 import os
-from flask import flash, request, redirect, url_for, render_template_string, Markup
+import re
+import json
+import uuid
+
+import textstat
+import pandas
+from flask import Blueprint, flash, request, redirect, url_for, current_app
 from werkzeug.utils import secure_filename
+
 import formfyxer
 from formfyxer import lit_explorer
-import textstat
 
-import pandas
+try:
+  from docassemble.webapp.app_object import csrf
+  from docassemble.base.util import get_config
+except:
+  csrf = type('', (), {})
+  # No-op decorator
+  csrf.exempt = lambda func: func
+  def get_config(var):
+      return current_app.config.get(var.replace(" ", "_").upper())
+
+bp = Blueprint('pdfstats', __name__, url_prefix='/pdfstats')
 
 UPLOAD_FOLDER = '/tmp'
 ALLOWED_EXTENSIONS = {'pdf'}
 
-# @app.route('/pdfstats', methods=['GET', 'POST'])
-# def pdfstats():
-#     return "Hello, World"
-
-app.config['PDFSTAT_UPLOAD_FOLDER'] = UPLOAD_FOLDER
+current_app.config['PDFSTAT_UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -84,7 +92,7 @@ upload_form = '''
 </html>
     '''
 
-@app.route('/pdfstats', methods=['GET', 'POST'])
+@bp.route('/', methods=['GET', 'POST'])
 @csrf.exempt
 def upload_file():
     if request.method == 'POST':
@@ -108,14 +116,14 @@ def upload_file():
             stats = formfyxer.parse_form(full_path, normalize=True, debug=True, openai_creds=get_config("open ai"), spot_token=get_config("spot token"))
             with open(os.path.join(to_path, "stats.json"), "w") as stats_file:
                 stats_file.write(json.dumps(stats))
-            return redirect(url_for('view_stats', file_id=intermediate_dir))
+            return redirect(url_for('pdfstats.view_stats', file_id=intermediate_dir))
     return upload_form
 
 from flask import send_from_directory
 
 def get_pdf_from_dir(file_id):
     path_to_dir = os.path.join(
-        app.config["PDFSTAT_UPLOAD_FOLDER"],
+        current_app.config["PDFSTAT_UPLOAD_FOLDER"],
         secure_filename(file_id),
     )
     for f in os.listdir(path_to_dir):
@@ -124,21 +132,21 @@ def get_pdf_from_dir(file_id):
     return None
 
 
-@app.route('/download/<file_id>')
+@bp.route('/download/<file_id>')
 def download_file(file_id):
     if not (file_id and valid_uuid(file_id)):
         raise Exception ("Not a valid filename")
     f = get_pdf_from_dir(file_id)
     if f:
-        return send_from_directory(directory=app.config["PDFSTAT_UPLOAD_FOLDER"], path=os.path.join(file_id, f))
+        return send_from_directory(directory=current_app.config["PDFSTAT_UPLOAD_FOLDER"], path=os.path.join(file_id, f))
     raise Exception("No file uploaded here")
 
 
-@app.route('/view/<file_id>')
+@bp.route('/view/<file_id>')
 def view_stats(file_id):
     if not (file_id and valid_uuid(file_id)):
         raise Exception("Not a valid filename")
-    to_dir = os.path.join(app.config["PDFSTAT_UPLOAD_FOLDER"], file_id)
+    to_dir = os.path.join(current_app.config["PDFSTAT_UPLOAD_FOLDER"], file_id)
     with open(os.path.join(to_dir, "stats.json")) as stats_file:
         stats = json.loads(stats_file.read())
     metric_means = {
@@ -418,3 +426,8 @@ def view_stats(file_id):
 </html>
     """
 
+try:
+  from docassemble.webapp.app_object import app
+  app.register_blueprint(bp)
+except:
+  pass
