@@ -327,7 +327,7 @@ def view_stats(file_id):
     </h2>
     <div id="flush-collapseFour" class="accordion-collapse collapse" aria-labelledby="flush-headingFour" data-bs-parent="#fullTextAccordion">
       <div class="accordion-body">
-      <p><b>Note: this is a list of each metric and it's specific score; they are summed together to get the total score</b></p>
+      <p><b>Note: this is a list of each metric and its specific score; they are summed together to get the total score</b></p>
       <table class="table">
       <thead>
         <tr>
