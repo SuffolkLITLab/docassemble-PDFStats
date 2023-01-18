@@ -141,6 +141,40 @@ def view_stats(file_id):
     to_dir = os.path.join(app.config["PDFSTAT_UPLOAD_FOLDER"], file_id)
     with open(os.path.join(to_dir, "stats.json")) as stats_file:
         stats = json.loads(stats_file.read())
+    metric_means = {
+      "complexity score": 18.25398487,
+      "time to answer": 49.266632,
+      "reading grade level": 7.180685,
+      "pages": 2.2601246,
+      "total fields": 38.38878,
+      "avg fields per page": 20.98784,
+      "number of sentences": 71.4894,
+      "difficult word count": 75.675389408,
+      "number of passive voice sentences": 8.11557632,
+      "citation count": 1.098442367
+    }
+    metric_stddev = {
+      "complexity score": 5.86058205587,
+      "time to answer": 82.79478559926,
+      "reading grade level": 1.561731,
+      "pages": 1.97868674,
+      "total fields": 47.211886658,
+      "avg fields per page": 20.96440214,
+      "number of sentences": 83.419848187,
+      "difficult word count": 75.67538940809969,
+      "number of passive voice sentences": 10.843292156557,
+      "citation count": 4.122761536011
+    }
+
+    def get_class(val, k):
+      if val < metric_means[k] - metric_stddev[k]:
+        return "data-good"
+      if val < metric_means[k] + metric_stddev[k]:
+        return ""
+      if val < metric_means[k] + 2 * metric_stddev[k]:
+        return "data-warn"
+      return "data-bad"
+
     title = stats.get('title', file_id)
     complexity_score = formfyxer.form_complexity(stats)
     word_count = len(stats.get("text").split(" "))
@@ -156,6 +190,24 @@ def view_stats(file_id):
     <style>
     .suffolk-blue {{
         background-color: #002e60;
+    }}
+    .data-good {{
+        background-color: #66ff66;
+    }}
+    .data-good:before {{
+        content: ☑️
+    }}
+    .data-warn {{
+        background-color: #fdfd66;
+    }}
+    .data-warn:before {{
+        content: ⚠️
+    }}
+    .data-bad {{
+        background-color: #ef6161;
+    }}
+    .data-bad:before {{
+        content: ❌
     }}
     </style>
   </head>
@@ -184,7 +236,7 @@ def view_stats(file_id):
     <tbody>
     <tr>
     <th scope="row">Complexity Score</th>
-    <td>{ "{:.2f}".format(complexity_score) }</td>
+    <td class="{get_class(complexity_score, "complexity score")}">{ "{:.2f}".format(complexity_score) }</td>
     <td>Lower is better</td>
     </tr>
     <tr>
@@ -196,7 +248,7 @@ def view_stats(file_id):
     </tr>
     <tr>
     <th scope="row">Time to answer</th>
-    <td>
+    <td class="{get_class(stats.get("time to answer", (0,0))[0], "time to answer")}">
     About { minutes_to_hours(round(stats.get("time to answer", (0,0))[0])) }, plus or minus { minutes_to_hours(round(stats.get("time to answer", (0,0))[1])) }
     </td>
     <td>The variation covers 1 standard deviation. See <a href="#flush-collapseThree">the footnotes</a> for more information.</td>
@@ -205,35 +257,35 @@ def view_stats(file_id):
     <th scope="row">
     Consensus reading grade level
     </th>
-    <td>Grade { int(stats.get("reading grade level")) }</td>
+    <td class="{get_class(stats.get("reading grade level"), "reading grade level")}">Grade { int(stats.get("reading grade level")) }</td>
     <td>Target is <a href="https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/style_guide/readability#target-reading-level">4th-6th grade</a></td>
     </tr>
     <tr>
     <th scope="row">
     Number of pages
     </th>
-    <td>{ stats.get("pages") }</td>
+    <td class="{get_class(stats.get("pages"), "pages")}">{ stats.get("pages") }</td>
     <td></td>
     </tr>
     <tr>
     <th scope="row">
     Number of fields
     </th>
-    <td>{ len(stats.get("fields",[])) }</td>
+    <td class="{get_class(len(stats.get("fields", [])), "total fields")}">{ len(stats.get("fields",[])) }</td>
     <td></td>    
     </tr>
     <tr>
     <th scope="row">
     Average number of fields per page
     </th>
-    <td>{float(stats.get("avg fields per page",0)):.1f}</td>
+    <td class="{get_class(stats.get("avg fields per page", 0), "avg fields per page")}">{float(stats.get("avg fields per page",0)):.1f}</td>
     <td>Target is < 15</td>
     </tr>
     <tr>
     <th scope="row">
     Number of sentences
     </th>
-    <td>{ stats.get("number of sentences") }</td>
+    <td class="{get_class(stats.get("number of sentences"), "number of sentences")}">{ stats.get("number of sentences") }</td>
     <td></td>
     </tr>
     <tr>
@@ -247,7 +299,7 @@ def view_stats(file_id):
     <th scope="row">
     Number of "difficult words"
     </th>
-    <td>{ difficult_word_count } <br/> ({difficult_word_count/word_count * 100:.1f}%)</td>
+    <td class="{get_class(difficult_word_count, "difficult word count")}">{ difficult_word_count } <br/> ({difficult_word_count/word_count * 100:.1f}%)</td>
     <td>May include inflections of some "easy" words. Target is < 5%</td>
     </tr>
     <tr>
@@ -261,7 +313,7 @@ def view_stats(file_id):
     <th scope="row">
     Number of citations
     </th>
-    <td>{ len(stats.get("citations",[])) }</td>
+    <td class="{get_class(len(stats.get("citations", [])), "citation count")}">{ len(stats.get("citations",[])) }</td>
     <td>Avoid using citations in court forms.</td>
     </tr>
     </tbody>
