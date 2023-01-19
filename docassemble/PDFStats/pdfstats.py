@@ -315,7 +315,7 @@ def view_stats(file_hash):
     Average number of fields per page
     </th>
     <td class="{get_class("avg fields per page")}">{float(stats.get("avg fields per page",0)):.1f}</td>
-    <td>Target is < 15<br/>{get_data("avg fieldls per page")}</td>
+    <td>Target is < 15<br/>{get_data("avg fields per page")}</td>
     </tr>
     <tr>
     <th scope="row">
