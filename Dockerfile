@@ -1,10 +1,12 @@
 FROM tiangolo/uwsgi-nginx-flask:python3.11
 
 # RUN pip install opencv-python-headless
-RUN apt-get update && apt-get install libgl1 snapd -y
-RUN snap install core; snap refresh core; snap install --classic certbot && ln -s /snap/bin/certbot /usr/bin/certbot
-# NOTE: you'll still need to manually run `certbox --nginx` to get the certificates
-RUN pip install git+https://github.com/SuffolkLITLab/FormFyxer.git@misc_pdfstats
+RUN apt-get update && apt-get install libgl1 pip3-python -y
+RUN pip3 install certbot certbot-nginx certbot-dns-route53
+# NOTE: manual steps after this: docker exec into container
+# `certbot --nginx`, then edit `/etc/nginx/conf.d/nginx.conf` to have `server_name ratemypdf.com`
+# then `certbot install --certname ratemypdf.com`
+RUN pip install git+https://github.com/SuffolkLITLab/FormFyxer.git@tmp_misc_gpt3
 
 COPY . /docassemble
 WORKDIR /docassemble

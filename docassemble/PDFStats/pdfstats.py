@@ -115,11 +115,14 @@ def upload_file():
             file_content = file.read()
             intermediate_dir = str(sha256(file_content).hexdigest()) # str(uuid.uuid4())
             to_path = os.path.join(current_app.config['PDFSTAT_UPLOAD_FOLDER'], intermediate_dir)
-            if os.path.isdir(to_path) and os.path.isfile(os.path.join(to_path, "stats.json")):
-                return redirect(url_for("pdfstats.view_stats", file_hash=intermediate_dir))
-            os.mkdir(to_path)
+            if os.path.isdir(to_path):
+                if os.path.isfile(os.path.join(to_path, "stats.json")):
+                    return redirect(url_for("pdfstats.view_stats", file_hash=intermediate_dir))
+            else:
+                os.mkdir(to_path)
             full_path = os.path.join(to_path, filename)
-            file.save(full_path)
+            with open(full_path, "w") as write_file:
+                write_file.write(file_content)
             stats = formfyxer.parse_form(full_path, normalize=True, debug=True, openai_creds=get_config("open ai"), spot_token=get_config("spot token"))
             with open(os.path.join(to_path, "stats.json"), "w") as stats_file:
                 stats_file.write(json.dumps(stats))
