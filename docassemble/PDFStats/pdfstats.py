@@ -121,7 +121,7 @@ def upload_file():
             else:
                 os.mkdir(to_path)
             full_path = os.path.join(to_path, filename)
-            with open(full_path, "w") as write_file:
+            with open(full_path, "wb") as write_file:
                 write_file.write(file_content)
             stats = formfyxer.parse_form(full_path, normalize=True, debug=True, openai_creds=get_config("open ai"), spot_token=get_config("spot token"))
             with open(os.path.join(to_path, "stats.json"), "w") as stats_file:
