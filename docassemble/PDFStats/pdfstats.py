@@ -174,7 +174,10 @@ def view_stats(file_id):
       "citation count": 4.122761536011
     }
 
-    def get_class(val, k):
+    def get_class(k, val=None):
+      if val is None:
+        val = stats.get(k, metric_means[k])
+
       if val < metric_means[k] - metric_stddev[k]:
         return "data-good"
       if val < metric_means[k] + metric_stddev[k]:
@@ -182,6 +185,9 @@ def view_stats(file_id):
       if val < metric_means[k] + 2 * metric_stddev[k]:
         return "data-warn"
       return "data-bad"
+
+    def get_data(k):
+      return f'<br/> <font size="1">Mean: {metric_means[k]}, Std. {metric_stddev[k]}</font>'
 
     title = stats.get('title', file_id)
     complexity_score = formfyxer.form_complexity(stats)
@@ -202,20 +208,20 @@ def view_stats(file_id):
     .data-good {{
         background-color: #66ff66;
     }}
-    .data-good:before {{
-        content: ☑️
+    .table .data-good:before {{
+        content: "☑️"
     }}
     .data-warn {{
         background-color: #fdfd66;
     }}
-    .data-warn:before {{
-        content: ⚠️
+    .table .data-warn:before {{
+        content: "⚠️"
     }}
-    .data-bad {{
+    .table .data-bad {{
         background-color: #ef6161;
     }}
     .data-bad:before {{
-        content: ❌
+        content: "❌"
     }}
     </style>
   </head>
@@ -243,7 +249,7 @@ def view_stats(file_id):
     </thead>
     <tbody>
     <tr>
-    <th scope="row">Complexity Score</th>
+    <th scope="row">Complexity Score{get_data("complexity score")}</th>
     <td class="{get_class(complexity_score, "complexity score")}">{ "{:.2f}".format(complexity_score) }</td>
     <td>Lower is better</td>
     </tr>
@@ -263,37 +269,37 @@ def view_stats(file_id):
     </tr>
     <tr>
     <th scope="row">
-    Consensus reading grade level
+    Consensus reading grade level{get_data("reading grade level")}
     </th>
-    <td class="{get_class(stats.get("reading grade level"), "reading grade level")}">Grade { int(stats.get("reading grade level")) }</td>
+    <td class="{get_class("reading grade level")}">Grade { int(stats.get("reading grade level")) }</td>
     <td>Target is <a href="https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/style_guide/readability#target-reading-level">4th-6th grade</a></td>
     </tr>
     <tr>
     <th scope="row">
-    Number of pages
+    Number of pages{get_data("pages")}
     </th>
-    <td class="{get_class(stats.get("pages"), "pages")}">{ stats.get("pages") }</td>
+    <td class="{get_class("pages")}">{ stats.get("pages") }</td>
     <td></td>
     </tr>
     <tr>
     <th scope="row">
-    Number of fields
+    Number of fields{get_data("total fields")}
     </th>
-    <td class="{get_class(len(stats.get("fields", [])), "total fields")}">{ len(stats.get("fields",[])) }</td>
+    <td class="{get_class("total fields")}">{ len(stats.get("fields",[])) }</td>
     <td></td>    
     </tr>
     <tr>
     <th scope="row">
-    Average number of fields per page
+    Average number of fields per page{get_data("avg fields per page")}
     </th>
-    <td class="{get_class(stats.get("avg fields per page", 0), "avg fields per page")}">{float(stats.get("avg fields per page",0)):.1f}</td>
+    <td class="{get_class("avg fields per page")}">{float(stats.get("avg fields per page",0)):.1f}</td>
     <td>Target is < 15</td>
     </tr>
     <tr>
     <th scope="row">
-    Number of sentences
+    Number of sentences{get_data("number of sentences")}
     </th>
-    <td class="{get_class(stats.get("number of sentences"), "number of sentences")}">{ stats.get("number of sentences") }</td>
+    <td class="{get_class("number of sentences")}">{ stats.get("number of sentences") }</td>
     <td></td>
     </tr>
     <tr>
@@ -305,9 +311,9 @@ def view_stats(file_id):
     </tr>
     <tr>
     <th scope="row">
-    Number of "difficult words"
+    Number of "difficult words"{get_data("difficult word count")}
     </th>
-    <td class="{get_class(difficult_word_count, "difficult word count")}">{ difficult_word_count } <br/> ({difficult_word_count/word_count * 100:.1f}%)</td>
+    <td class="{get_class("difficult word count")}">{ difficult_word_count } <br/> ({difficult_word_count/word_count * 100:.1f}%)</td>
     <td>May include inflections of some "easy" words. Target is < 5%</td>
     </tr>
     <tr>
@@ -319,9 +325,9 @@ def view_stats(file_id):
     </tr>
     <tr>
     <th scope="row">
-    Number of citations
+    Number of citations{get_data("citation court")}
     </th>
-    <td class="{get_class(len(stats.get("citations", [])), "citation count")}">{ len(stats.get("citations",[])) }</td>
+    <td class="{get_class("citation count")}">{ len(stats.get("citations",[])) }</td>
     <td>Avoid using citations in court forms.</td>
     </tr>
     </tbody>
