@@ -168,7 +168,9 @@ def view_stats(file_hash):
       "avg fields per page": 20.98784,
       "number of sentences": 71.4894,
       "difficult word count": 75.675389408,
+      "difficult word percent": 0.127301677,
       "number of passive voice sentences": 8.11557632,
+      "sentences per page": 31.25462694,
       "citation count": 1.098442367
     }
     metric_stddev = {
@@ -180,6 +182,8 @@ def view_stats(file_hash):
       "avg fields per page": 20.96440214,
       "number of sentences": 83.419848187,
       "difficult word count": 75.67538940809969,
+      "difficult word percent": 0.03873129,
+      "sentences per page": 14.38664529,
       "number of passive voice sentences": 10.843292156557,
       "citation count": 4.122761536011
     }
@@ -197,7 +201,7 @@ def view_stats(file_hash):
       return "data-bad"
 
     def get_data(k):
-      return f'<br/> <font size="1">Mean: {metric_means[k]}, Std. {metric_stddev[k]}</font>'
+      return f'<font size="1">Mean: {metric_means[k]:.2f}, Std. {metric_stddev[k]:.2f}</font>'
 
     title = stats.get('title', file_hash)
     complexity_score = formfyxer.form_complexity(stats)
@@ -233,6 +237,12 @@ def view_stats(file_hash):
     .data-bad:before {{
         content: "❌"
     }}
+    a.btn-primary {{
+        margin-left: auto;
+        margin-right: auto;
+        display: block;
+        width: 175px;
+    }}
     </style>
   </head>
 <body>
@@ -245,23 +255,25 @@ def view_stats(file_hash):
   </div>
 </nav>
 
-<main style="max-width: 800px; margin-left: auto; margin-right: auto;">
+<main style="max-width: 800px; margin-left: auto; margin-right: auto; padding-left: 8px;">
 <h1 class="pb-2 border-bottom text-center">File statistics for <span class="text-break">{ title }</span></h1>
-<p><a href="/pdfstats/download/{file_hash}">Download the file</a></p>
+<p>
+<a class="btn btn-primary" href="/pdfstats/download/{file_hash}" role="button">Download the file</a>
+</p>
 <br/>
 <table class="table text-center">
     <thead>
     <tr>
       <th scope="col">Statistic name</th>
       <th scope="col">Value</th>
-      <th scope="col">Note</th>
+      <th scope="col">Target + Compare</th>
     </tr>
     </thead>
     <tbody>
     <tr>
-    <th scope="row">Complexity Score{get_data("complexity score")}</th>
+    <th scope="row">Complexity Score</th>
     <td class="{get_class("complexity score", complexity_score)}">{ "{:.2f}".format(complexity_score) }</td>
-    <td>Lower is better</td>
+    <td>{get_data("complexity score")}<br/>Lower is better, see <a href="#flush-collapseFour">the footnotes</a> for more information.</td>
     </tr>
     <tr>
     <th scope="row">Time to read</th>
@@ -279,52 +291,52 @@ def view_stats(file_hash):
     </tr>
     <tr>
     <th scope="row">
-    Consensus reading grade level{get_data("reading grade level")}
+    Consensus reading grade level
     </th>
     <td class="{get_class("reading grade level")}">Grade { int(stats.get("reading grade level")) }</td>
-    <td>Target is <a href="https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/style_guide/readability#target-reading-level">4th-6th grade</a></td>
+    <td>Target is <a href="https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/style_guide/readability#target-reading-level">4th-6th grade</a><br/>{get_data("reading grade level")}</td>
     </tr>
     <tr>
     <th scope="row">
-    Number of pages{get_data("pages")}
+    Number of pages
     </th>
     <td class="{get_class("pages")}">{ stats.get("pages") }</td>
-    <td></td>
+    <td>{get_data("pages")}</td>
     </tr>
     <tr>
     <th scope="row">
-    Number of fields{get_data("total fields")}
+    Number of fields
     </th>
     <td class="{get_class("total fields")}">{ len(stats.get("fields",[])) }</td>
-    <td></td>    
+    <td>{get_data("total fields")}</td>    
     </tr>
     <tr>
     <th scope="row">
-    Average number of fields per page{get_data("avg fields per page")}
+    Average number of fields per page
     </th>
     <td class="{get_class("avg fields per page")}">{float(stats.get("avg fields per page",0)):.1f}</td>
-    <td>Target is < 15</td>
+    <td>Target is < 15<br/>{get_data("avg fieldls per page")}</td>
     </tr>
     <tr>
     <th scope="row">
-    Number of sentences{get_data("number of sentences")}
+    Number of sentences per page
     </th>
-    <td class="{get_class("number of sentences")}">{ stats.get("number of sentences") }</td>
-    <td></td>
+    <td class="{get_class("sentences per page")}">{ stats.get("sentences per page") }</td>
+    <td>{get_data("sentences per page")}</td>
     </tr>
     <tr>
     <th scope="row">
-    Word count / page
+    Word count
     </th>
-    <td>{ word_count } ({float(word_count/stats.get("pages",1.0)):.1f})</td>
+    <td>{ word_count } ({float(word_count/stats.get("pages",1.0)):.1f} per page)</td>
     <td>Users <a href="https://www.nngroup.com/articles/how-little-do-users-read/">read as little as 20% of the content</a> on a longer page. Try to keep word count to 110 words.</td>
     </tr>
     <tr>
     <th scope="row">
-    Number of "difficult words"{get_data("difficult word count")}
+    Number of "difficult words"
     </th>
-    <td class="{get_class("difficult word count")}">{ difficult_word_count } <br/> ({difficult_word_count/word_count * 100:.1f}%)</td>
-    <td>May include inflections of some "easy" words. Target is < 5%</td>
+    <td class="{get_class("difficult word percent")}">{ difficult_word_count } <br/> ({stats.get("difficult word percent"):.1f}%)</td>
+    <td>May include inflections of some "easy" words. Target is < 5% <br/>{get_data("difficult word percent")}</td>
     </tr>
     <tr>
     <th scope="row">
@@ -335,10 +347,10 @@ def view_stats(file_hash):
     </tr>
     <tr>
     <th scope="row">
-    Number of citations{get_data("citation count")}
+    Number of citations
     </th>
     <td class="{get_class("citation count")}">{ len(stats.get("citations",[])) }</td>
-    <td>Avoid using citations in court forms.</td>
+    <td>Avoid using citations in court forms.<br/>{get_data("citation count")}</td>
     </tr>
     </tbody>
 </table>
