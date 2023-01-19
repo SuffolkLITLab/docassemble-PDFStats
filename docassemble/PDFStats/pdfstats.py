@@ -4,6 +4,7 @@ import os
 import re
 import json
 import uuid
+from hashlib import sha256
 
 import textstat
 import pandas
@@ -36,6 +37,9 @@ def allowed_file(filename):
 
 def valid_uuid(file_id):
     return bool(re.match(r"^[A-Za-z0-9]{8}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{12}$", file_id))
+
+def valid_hash(hash):
+    return bool(re.match(r"^[A-Fa-f0-9]{64}$", hash))
 
 def minutes_to_hours(minutes:float)->str:
   if minutes < 2:
@@ -108,15 +112,18 @@ def upload_file():
             return redirect(request.url)
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            intermediate_dir = str(uuid.uuid4())
+            file_content = file.read()
+            intermediate_dir = str(sha256(file_content).hexdigest()) # str(uuid.uuid4())
             to_path = os.path.join(current_app.config['PDFSTAT_UPLOAD_FOLDER'], intermediate_dir)
+            if os.path.isdir(to_path) and os.path.isfile(os.path.join(to_path, "stats.json")):
+                return redirect(url_for("pdfstats.view_stats", file_hash=intermediate_dir))
             os.mkdir(to_path)
             full_path = os.path.join(to_path, filename)
             file.save(full_path)
             stats = formfyxer.parse_form(full_path, normalize=True, debug=True, openai_creds=get_config("open ai"), spot_token=get_config("spot token"))
             with open(os.path.join(to_path, "stats.json"), "w") as stats_file:
                 stats_file.write(json.dumps(stats))
-            return redirect(url_for('pdfstats.view_stats', file_id=intermediate_dir))
+            return redirect(url_for('pdfstats.view_stats', file_hash=intermediate_dir))
     return upload_form
 
 from flask import send_from_directory
@@ -133,20 +140,20 @@ def get_pdf_from_dir(file_id):
 
 
 @bp.route('/download/<file_id>')
-def download_file(file_id):
-    if not (file_id and valid_uuid(file_id)):
+def download_file(file_hash):
+    if not (file_hash and valid_hash(file_hash)):
         raise Exception ("Not a valid filename")
-    f = get_pdf_from_dir(file_id)
+    f = get_pdf_from_dir(file_hash)
     if f:
-        return send_from_directory(directory=current_app.config["PDFSTAT_UPLOAD_FOLDER"], path=os.path.join(file_id, f))
+        return send_from_directory(directory=current_app.config["PDFSTAT_UPLOAD_FOLDER"], path=os.path.join(file_hash, f))
     raise Exception("No file uploaded here")
 
 
 @bp.route('/view/<file_id>')
-def view_stats(file_id):
-    if not (file_id and valid_uuid(file_id)):
+def view_stats(file_hash):
+    if not (file_hash and valid_hash(file_hash)):
         raise Exception("Not a valid filename")
-    to_dir = os.path.join(current_app.config["PDFSTAT_UPLOAD_FOLDER"], file_id)
+    to_dir = os.path.join(current_app.config["PDFSTAT_UPLOAD_FOLDER"], file_hash)
     with open(os.path.join(to_dir, "stats.json")) as stats_file:
         stats = json.loads(stats_file.read())
     metric_means = {
@@ -189,7 +196,7 @@ def view_stats(file_id):
     def get_data(k):
       return f'<br/> <font size="1">Mean: {metric_means[k]}, Std. {metric_stddev[k]}</font>'
 
-    title = stats.get('title', file_id)
+    title = stats.get('title', file_hash)
     complexity_score = formfyxer.form_complexity(stats)
     word_count = len(stats.get("text").split(" "))
     difficult_word_count = textstat.difficult_words(stats.get("text"))
@@ -237,7 +244,7 @@ def view_stats(file_id):
 
 <main style="max-width: 800px; margin-left: auto; margin-right: auto;">
 <h1 class="pb-2 border-bottom text-center">File statistics for <span class="text-break">{ title }</span></h1>
-<p><a href="/pdfstats/download/{file_id}">Download the file</a></p>
+<p><a href="/pdfstats/download/{file_hash}">Download the file</a></p>
 <br/>
 <table class="table text-center">
     <thead>
@@ -250,7 +257,7 @@ def view_stats(file_id):
     <tbody>
     <tr>
     <th scope="row">Complexity Score{get_data("complexity score")}</th>
-    <td class="{get_class(complexity_score, "complexity score")}">{ "{:.2f}".format(complexity_score) }</td>
+    <td class="{get_class("complexity score", complexity_score)}">{ "{:.2f}".format(complexity_score) }</td>
     <td>Lower is better</td>
     </tr>
     <tr>
@@ -262,7 +269,7 @@ def view_stats(file_id):
     </tr>
     <tr>
     <th scope="row">Time to answer</th>
-    <td class="{get_class(stats.get("time to answer", (0,0))[0], "time to answer")}">
+    <td class="{get_class("time to answer", stats.get("time to answer", (0,0))[0])}">
     About { minutes_to_hours(round(stats.get("time to answer", (0,0))[0])) }, plus or minus { minutes_to_hours(round(stats.get("time to answer", (0,0))[1])) }
     </td>
     <td>The variation covers 1 standard deviation. See <a href="#flush-collapseThree">the footnotes</a> for more information.</td>
