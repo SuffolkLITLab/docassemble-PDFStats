@@ -131,10 +131,10 @@ def upload_file():
 
 from flask import send_from_directory
 
-def get_pdf_from_dir(file_id):
+def get_pdf_from_dir(file_hash):
     path_to_dir = os.path.join(
         current_app.config["PDFSTAT_UPLOAD_FOLDER"],
-        secure_filename(file_id),
+        secure_filename(file_hash),
     )
     for f in os.listdir(path_to_dir):
         if f.endswith(".pdf"):
@@ -142,7 +142,7 @@ def get_pdf_from_dir(file_id):
     return None
 
 
-@bp.route('/download/<file_id>')
+@bp.route('/download/<file_hash>')
 def download_file(file_hash):
     if not (file_hash and valid_hash(file_hash)):
         raise Exception ("Not a valid filename")
@@ -152,7 +152,7 @@ def download_file(file_hash):
     raise Exception("No file uploaded here")
 
 
-@bp.route('/view/<file_id>')
+@bp.route('/view/<file_hash>')
 def view_stats(file_hash):
     if not (file_hash and valid_hash(file_hash)):
         raise Exception("Not a valid filename")
