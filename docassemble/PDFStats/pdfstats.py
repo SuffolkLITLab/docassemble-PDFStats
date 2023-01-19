@@ -335,7 +335,7 @@ def view_stats(file_hash):
     </tr>
     <tr>
     <th scope="row">
-    Number of citations{get_data("citation court")}
+    Number of citations{get_data("citation count")}
     </th>
     <td class="{get_class("citation count")}">{ len(stats.get("citations",[])) }</td>
     <td>Avoid using citations in court forms.</td>
