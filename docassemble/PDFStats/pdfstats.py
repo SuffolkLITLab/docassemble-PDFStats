@@ -75,7 +75,7 @@ upload_form = '''
   <div class="container-fluid">
     <a class="navbar-brand" href="https://suffolklitlab.org">
   <img src="https://apps.suffolklitlab.org/packagestatic/docassemble.MassAccess/lit_logo_light.png?v=0.3.0" alt="Logo" width="30" height="24" class="d-inline-block align-text-top"/>
-  Suffolk LIT Lab
+  Suffolk LIT Lab: Rate My PDF
   </a>
   </div>
 </nav>    
@@ -250,7 +250,7 @@ def view_stats(file_hash):
   <div class="container-fluid">
     <a class="navbar-brand" href="https://suffolklitlab.org">
   <img src="https://apps.suffolklitlab.org/packagestatic/docassemble.MassAccess/lit_logo_light.png?v=0.3.0" alt="Logo" width="30" height="24" class="d-inline-block align-text-top"/>
-  Suffolk LIT Lab
+  Suffolk LIT Lab: Rate My PDF
   </a>
   </div>
 </nav>
@@ -440,6 +440,14 @@ def view_stats(file_hash):
 
 
 <br/>
+
+<p>Rate My PDF is a project of the <a href="https://suffolklitlab.org">Suffolk LIT Lab</a>
+It is part of our broader <a href="https://suffolklitlab.org/docassemble-AssemblyLine-documentation/">Document
+Assembly Line</a> project along with our <a href="https://suffolklitlab.org/form-explorer/">Form
+Explorer</a>.
+</p>
+<p>The results listed here, especially our "time to complete" scores, are in an experimental
+status and should not be relied on. We welcome feedback to improve our scoring!</p>
 
 <p>Feedback? Email <a href="mailto:massaccess@suffolk.edu">massaccess@suffolk.edu</a></p>
 
