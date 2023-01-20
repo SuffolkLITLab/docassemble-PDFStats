@@ -357,9 +357,9 @@ def view_stats(file_hash):
 
 <h2 class="pb-2 border-bottom text-center">Ideas for Improvements</h2>
 
-{ "<p>Here's an idea for a new title: <b>" + stats["suggested title"] + "</b></p>" if stats.get("suggested title") else ""}
+{ "<p>Here's an idea for a new title*: <b>" + stats["suggested title"] + "</b></p>" if stats.get("suggested title") else ""}
 
-<p>Here's a idea for an easy-to-read description of the form:
+<p>Here's a idea for an easy-to-read description of the form*:
 <div class="card text-left">
   <div class="card-body">
    { stats["description"] }
@@ -438,16 +438,27 @@ def view_stats(file_hash):
 
 <a class="btn btn-primary" href="/pdfstats" role="button">Upload a new PDF</a>
 
+
+<br/>
+
+<p>Feedback? Email <a href="mailto:massaccess@suffolk.edu">massaccess@suffolk.edu</a></p>
+
+<br/>
+
+<p>*: These suggestions are provided by <a href="https://openai.com/blog/gpt-3-apps/">OpenAI's GPT3</a>.</p>
+
 </main>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-u1OknCvxWvY5kfmNBILK2hRnQC3Pr17a+RTT6rIHI7NnikvbZlHgTPOOmMi466C8" crossorigin="anonymous"></script>
     <script>
+    (function($){{
         $(document).ready(function() {{
             var accordSec = window.location.hash;
             if (accordSec.length) {{
                 $(accordSec).collapse("show");
             }}
         }});
+     }})(jQuery);
     </script>
 </body>
 
