@@ -219,7 +219,7 @@ def view_stats(file_hash):
     .suffolk-blue {{
         background-color: #002e60;
     }}
-    .data-good {{
+    .table .data-good {{
         background-color: #66ff66;
     }}
     .table .data-good:before {{
@@ -273,7 +273,7 @@ def view_stats(file_hash):
     <tr>
     <th scope="row">Complexity Score</th>
     <td class="{get_class("complexity score", complexity_score)}">{ "{:.2f}".format(complexity_score) }</td>
-    <td>{get_data("complexity score")}<br/>Lower is better, see <a href="#flush-collapseFour">the footnotes</a> for more information.</td>
+    <td>Lower is better, see <a href="#flush-collapseFour">the footnotes</a> for more information.<br/>{get_data("complexity score")}</td>
     </tr>
     <tr>
     <th scope="row">Time to read</th>
@@ -335,7 +335,7 @@ def view_stats(file_hash):
     <th scope="row">
     Number of "difficult words"
     </th>
-    <td class="{get_class("difficult word percent")}">{ difficult_word_count } <br/> ({stats.get("difficult word percent"):.1f}%)</td>
+    <td class="{get_class("difficult word percent")}">{ difficult_word_count } <br/> ({(stats.get("difficult word percent") * 100):.1f}%)</td>
     <td>May include inflections of some "easy" words. Target is < 5% <br/>{get_data("difficult word percent")}</td>
     </tr>
     <tr>
