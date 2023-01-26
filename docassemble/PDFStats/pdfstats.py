@@ -1,26 +1,40 @@
 # pre-load
 
-from docassemble.webapp.app_object import app, csrf
-from docassemble.base.util import path_and_mimetype, get_config
-import json
-
 import os
-from flask import flash, request, redirect, url_for, render_template_string, Markup
+import re
+import json
+import uuid
+from hashlib import sha256
+
+import textstat
+import pandas
+from flask import Blueprint, flash, request, redirect, url_for, current_app
 from werkzeug.utils import secure_filename
+
 import formfyxer
 from formfyxer import lit_explorer
-import textstat
 
-import pandas
+try:
+  from docassemble.webapp.app_object import csrf
+  from docassemble.base.util import get_config
+except:
+  csrf = type('', (), {})
+  # No-op decorator (csrf.exempt is only required inside Docassemble)
+  csrf.exempt = lambda func: func
+  def get_config(var):
+      return current_app.config.get(var.replace(" ", "_").upper())
+  import secrets
+  # This generates a unique secret key every time Flask restarts
+  # Maybe that will do something weird in the future but for now we're
+  # only using this for the `flash()` function
+  current_app.config.update(SECRET_KEY=secrets.token_hex())
+
+bp = Blueprint('pdfstats', __name__, url_prefix='/pdfstats')
 
 UPLOAD_FOLDER = '/tmp'
 ALLOWED_EXTENSIONS = {'pdf'}
 
-# @app.route('/pdfstats', methods=['GET', 'POST'])
-# def pdfstats():
-#     return "Hello, World"
-
-app.config['PDFSTAT_UPLOAD_FOLDER'] = UPLOAD_FOLDER
+current_app.config['PDFSTAT_UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -28,6 +42,9 @@ def allowed_file(filename):
 
 def valid_uuid(file_id):
     return bool(re.match(r"^[A-Za-z0-9]{8}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{12}$", file_id))
+
+def valid_hash(hash):
+    return bool(re.match(r"^[A-Fa-f0-9]{64}$", hash))
 
 def minutes_to_hours(minutes:float)->str:
   if minutes < 2:
@@ -63,7 +80,7 @@ upload_form = '''
   <div class="container-fluid">
     <a class="navbar-brand" href="https://suffolklitlab.org">
   <img src="https://apps.suffolklitlab.org/packagestatic/docassemble.MassAccess/lit_logo_light.png?v=0.3.0" alt="Logo" width="30" height="24" class="d-inline-block align-text-top"/>
-  Suffolk LIT Lab
+  Suffolk LIT Lab: Rate My PDF
   </a>
   </div>
 </nav>    
@@ -84,7 +101,7 @@ upload_form = '''
 </html>
     '''
 
-@app.route('/pdfstats', methods=['GET', 'POST'])
+@bp.route('/', methods=['GET', 'POST'])
 @csrf.exempt
 def upload_file():
     if request.method == 'POST':
@@ -100,23 +117,29 @@ def upload_file():
             return redirect(request.url)
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            intermediate_dir = str(uuid.uuid4())
+            file_content = file.read()
+            intermediate_dir = str(sha256(file_content).hexdigest()) # str(uuid.uuid4())
             to_path = os.path.join(current_app.config['PDFSTAT_UPLOAD_FOLDER'], intermediate_dir)
-            os.mkdir(to_path)
+            if os.path.isdir(to_path):
+                if os.path.isfile(os.path.join(to_path, "stats.json")):
+                    return redirect(url_for("pdfstats.view_stats", file_hash=intermediate_dir))
+            else:
+                os.mkdir(to_path)
             full_path = os.path.join(to_path, filename)
-            file.save(full_path)
+            with open(full_path, "wb") as write_file:
+                write_file.write(file_content)
             stats = formfyxer.parse_form(full_path, normalize=True, debug=True, openai_creds=get_config("open ai"), spot_token=get_config("spot token"))
             with open(os.path.join(to_path, "stats.json"), "w") as stats_file:
                 stats_file.write(json.dumps(stats))
-            return redirect(url_for('view_stats', file_id=intermediate_dir))
+            return redirect(url_for('pdfstats.view_stats', file_hash=intermediate_dir))
     return upload_form
 
 from flask import send_from_directory
 
-def get_pdf_from_dir(file_id):
+def get_pdf_from_dir(file_hash):
     path_to_dir = os.path.join(
-        app.config["PDFSTAT_UPLOAD_FOLDER"],
-        secure_filename(file_id),
+        current_app.config["PDFSTAT_UPLOAD_FOLDER"],
+        secure_filename(file_hash),
     )
     for f in os.listdir(path_to_dir):
         if f.endswith(".pdf"):
@@ -124,21 +147,21 @@ def get_pdf_from_dir(file_id):
     return None
 
 
-@app.route('/download/<file_id>')
-def download_file(file_id):
-    if not (file_id and valid_uuid(file_id)):
+@bp.route('/download/<file_hash>')
+def download_file(file_hash):
+    if not (file_hash and valid_hash(file_hash)):
         raise Exception ("Not a valid filename")
-    f = get_pdf_from_dir(file_id)
+    f = get_pdf_from_dir(file_hash)
     if f:
-        return send_from_directory(directory=app.config["PDFSTAT_UPLOAD_FOLDER"], path=os.path.join(file_id, f))
+        return send_from_directory(directory=current_app.config["PDFSTAT_UPLOAD_FOLDER"], path=os.path.join(file_hash, f))
     raise Exception("No file uploaded here")
 
 
-@app.route('/view/<file_id>')
-def view_stats(file_id):
-    if not (file_id and valid_uuid(file_id)):
+@bp.route('/view/<file_hash>')
+def view_stats(file_hash):
+    if not (file_hash and valid_hash(file_hash)):
         raise Exception("Not a valid filename")
-    to_dir = os.path.join(app.config["PDFSTAT_UPLOAD_FOLDER"], file_id)
+    to_dir = os.path.join(current_app.config["PDFSTAT_UPLOAD_FOLDER"], file_hash)
     with open(os.path.join(to_dir, "stats.json")) as stats_file:
         stats = json.loads(stats_file.read())
     metric_means = {
@@ -150,7 +173,9 @@ def view_stats(file_id):
       "avg fields per page": 20.98784,
       "number of sentences": 71.4894,
       "difficult word count": 75.675389408,
+      "difficult word percent": 0.127301677,
       "number of passive voice sentences": 8.11557632,
+      "sentences per page": 31.25462694,
       "citation count": 1.098442367
     }
     metric_stddev = {
@@ -162,11 +187,16 @@ def view_stats(file_id):
       "avg fields per page": 20.96440214,
       "number of sentences": 83.419848187,
       "difficult word count": 75.67538940809969,
+      "difficult word percent": 0.03873129,
+      "sentences per page": 14.38664529,
       "number of passive voice sentences": 10.843292156557,
       "citation count": 4.122761536011
     }
 
-    def get_class(val, k):
+    def get_class(k, val=None):
+      if val is None:
+        val = stats.get(k, metric_means[k])
+
       if val < metric_means[k] - metric_stddev[k]:
         return "data-good"
       if val < metric_means[k] + metric_stddev[k]:
@@ -175,7 +205,10 @@ def view_stats(file_id):
         return "data-warn"
       return "data-bad"
 
-    title = stats.get('title', file_id)
+    def get_data(k):
+      return f'<font size="1">Mean: {metric_means[k]:.2f}, Std. {metric_stddev[k]:.2f}</font>'
+
+    title = stats.get('title', file_hash)
     complexity_score = formfyxer.form_complexity(stats)
     word_count = len(stats.get("text").split(" "))
     difficult_word_count = textstat.difficult_words(stats.get("text"))
@@ -191,23 +224,29 @@ def view_stats(file_id):
     .suffolk-blue {{
         background-color: #002e60;
     }}
-    .data-good {{
+    .table .data-good {{
         background-color: #66ff66;
     }}
-    .data-good:before {{
-        content: ☑️
+    .table .data-good:before {{
+        content: "☑️"
     }}
     .data-warn {{
         background-color: #fdfd66;
     }}
-    .data-warn:before {{
-        content: ⚠️
+    .table .data-warn:before {{
+        content: "⚠️"
     }}
-    .data-bad {{
+    .table .data-bad {{
         background-color: #ef6161;
     }}
     .data-bad:before {{
-        content: ❌
+        content: "❌"
+    }}
+    a.btn-primary {{
+        margin-left: auto;
+        margin-right: auto;
+        display: block;
+        width: 175px;
     }}
     </style>
   </head>
@@ -216,28 +255,30 @@ def view_stats(file_id):
   <div class="container-fluid">
     <a class="navbar-brand" href="https://suffolklitlab.org">
   <img src="https://apps.suffolklitlab.org/packagestatic/docassemble.MassAccess/lit_logo_light.png?v=0.3.0" alt="Logo" width="30" height="24" class="d-inline-block align-text-top"/>
-  Suffolk LIT Lab
+  Suffolk LIT Lab: Rate My PDF
   </a>
   </div>
 </nav>
 
-<main style="max-width: 800px; margin-left: auto; margin-right: auto;">
+<main style="max-width: 800px; margin-left: auto; margin-right: auto; padding-left: 8px;">
 <h1 class="pb-2 border-bottom text-center">File statistics for <span class="text-break">{ title }</span></h1>
-<p><a href="/pdfstats/download/{file_id}">Download the file</a></p>
+<p>
+<a class="btn btn-primary" href="/pdfstats/download/{file_hash}" role="button">Download the file</a>
+</p>
 <br/>
 <table class="table text-center">
     <thead>
     <tr>
       <th scope="col">Statistic name</th>
       <th scope="col">Value</th>
-      <th scope="col">Note</th>
+      <th scope="col">Target + Compare</th>
     </tr>
     </thead>
     <tbody>
     <tr>
     <th scope="row">Complexity Score</th>
-    <td class="{get_class(complexity_score, "complexity score")}">{ "{:.2f}".format(complexity_score) }</td>
-    <td>Lower is better</td>
+    <td class="{get_class("complexity score", complexity_score)}">{ "{:.2f}".format(complexity_score) }</td>
+    <td>Lower is better, see <a href="#flush-collapseFour">the footnotes</a> for more information.<br/>{get_data("complexity score")}</td>
     </tr>
     <tr>
     <th scope="row">Time to read</th>
@@ -248,7 +289,7 @@ def view_stats(file_id):
     </tr>
     <tr>
     <th scope="row">Time to answer</th>
-    <td class="{get_class(stats.get("time to answer", (0,0))[0], "time to answer")}">
+    <td class="{get_class("time to answer", stats.get("time to answer", (0,0))[0])}">
     About { minutes_to_hours(round(stats.get("time to answer", (0,0))[0])) }, plus or minus { minutes_to_hours(round(stats.get("time to answer", (0,0))[1])) }
     </td>
     <td>The variation covers 1 standard deviation. See <a href="#flush-collapseThree">the footnotes</a> for more information.</td>
@@ -257,50 +298,50 @@ def view_stats(file_id):
     <th scope="row">
     Consensus reading grade level
     </th>
-    <td class="{get_class(stats.get("reading grade level"), "reading grade level")}">Grade { int(stats.get("reading grade level")) }</td>
-    <td>Target is <a href="https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/style_guide/readability#target-reading-level">4th-6th grade</a></td>
+    <td class="{get_class("reading grade level")}">Grade { int(stats.get("reading grade level")) }</td>
+    <td>Target is <a href="https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/style_guide/readability#target-reading-level">4th-6th grade</a><br/>{get_data("reading grade level")}</td>
     </tr>
     <tr>
     <th scope="row">
     Number of pages
     </th>
-    <td class="{get_class(stats.get("pages"), "pages")}">{ stats.get("pages") }</td>
-    <td></td>
+    <td class="{get_class("pages")}">{ stats.get("pages") }</td>
+    <td>{get_data("pages")}</td>
     </tr>
     <tr>
     <th scope="row">
     Number of fields
     </th>
-    <td class="{get_class(len(stats.get("fields", [])), "total fields")}">{ len(stats.get("fields",[])) }</td>
-    <td></td>    
+    <td class="{get_class("total fields")}">{ len(stats.get("fields",[])) }</td>
+    <td>{get_data("total fields")}</td>    
     </tr>
     <tr>
     <th scope="row">
     Average number of fields per page
     </th>
-    <td class="{get_class(stats.get("avg fields per page", 0), "avg fields per page")}">{float(stats.get("avg fields per page",0)):.1f}</td>
-    <td>Target is < 15</td>
+    <td class="{get_class("avg fields per page")}">{float(stats.get("avg fields per page",0)):.1f}</td>
+    <td>Target is < 15<br/>{get_data("avg fields per page")}</td>
     </tr>
     <tr>
     <th scope="row">
-    Number of sentences
+    Number of sentences per page
     </th>
-    <td class="{get_class(stats.get("number of sentences"), "number of sentences")}">{ stats.get("number of sentences") }</td>
-    <td></td>
+    <td class="{get_class("sentences per page")}">{ stats.get("sentences per page") }</td>
+    <td>{get_data("sentences per page")}</td>
     </tr>
     <tr>
     <th scope="row">
-    Word count / page
+    Word count
     </th>
-    <td>{ word_count } ({float(word_count/stats.get("pages",1.0)):.1f})</td>
+    <td>{ word_count } ({float(word_count/stats.get("pages",1.0)):.1f} per page)</td>
     <td>Users <a href="https://www.nngroup.com/articles/how-little-do-users-read/">read as little as 20% of the content</a> on a longer page. Try to keep word count to 110 words.</td>
     </tr>
     <tr>
     <th scope="row">
     Number of "difficult words"
     </th>
-    <td class="{get_class(difficult_word_count, "difficult word count")}">{ difficult_word_count } <br/> ({difficult_word_count/word_count * 100:.1f}%)</td>
-    <td>May include inflections of some "easy" words. Target is < 5%</td>
+    <td class="{get_class("difficult word percent")}">{ difficult_word_count } <br/> ({(stats.get("difficult word percent") * 100):.1f}%)</td>
+    <td>May include inflections of some "easy" words. Target is < 5% <br/>{get_data("difficult word percent")}</td>
     </tr>
     <tr>
     <th scope="row">
@@ -313,17 +354,17 @@ def view_stats(file_id):
     <th scope="row">
     Number of citations
     </th>
-    <td class="{get_class(len(stats.get("citations", [])), "citation count")}">{ len(stats.get("citations",[])) }</td>
-    <td>Avoid using citations in court forms.</td>
+    <td class="{get_class("citation count")}">{ len(stats.get("citations",[])) }</td>
+    <td>Avoid using citations in court forms.<br/>{get_data("citation count")}</td>
     </tr>
     </tbody>
 </table>
 
 <h2 class="pb-2 border-bottom text-center">Ideas for Improvements</h2>
 
-{ "<p>Here's an idea for a new title: <b>" + stats["suggested title"] + "</b></p>" if stats.get("suggested title") else ""}
+{ "<p>Here's an idea for a new title*: <b>" + stats["suggested title"] + "</b></p>" if stats.get("suggested title") else ""}
 
-<p>Here's a idea for an easy-to-read description of the form:
+<p>Here's a idea for an easy-to-read description of the form*:
 <div class="card text-left">
   <div class="card-body">
    { stats["description"] }
@@ -402,19 +443,43 @@ def view_stats(file_id):
 
 <a class="btn btn-primary" href="/pdfstats" role="button">Upload a new PDF</a>
 
+
+<br/>
+
+<p>Rate My PDF is a project of the <a href="https://suffolklitlab.org">Suffolk LIT Lab</a>
+It is part of our broader <a href="https://suffolklitlab.org/docassemble-AssemblyLine-documentation/">Document
+Assembly Line</a> project along with our <a href="https://suffolklitlab.org/form-explorer/">Form
+Explorer</a>.
+</p>
+<p>The results listed here, especially our "time to complete" scores, are in an experimental
+status and should not be relied on. We welcome feedback to improve our scoring!</p>
+
+<p>Feedback? Email <a href="mailto:massaccess@suffolk.edu">massaccess@suffolk.edu</a></p>
+
+<br/>
+
+<p>*: These suggestions are provided by <a href="https://openai.com/blog/gpt-3-apps/">OpenAI's GPT3</a>.</p>
+
 </main>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-u1OknCvxWvY5kfmNBILK2hRnQC3Pr17a+RTT6rIHI7NnikvbZlHgTPOOmMi466C8" crossorigin="anonymous"></script>
     <script>
+    (function($){{
         $(document).ready(function() {{
             var accordSec = window.location.hash;
             if (accordSec.length) {{
                 $(accordSec).collapse("show");
             }}
         }});
+     }})(jQuery);
     </script>
 </body>
 
 </html>
     """
 
+try:
+  from docassemble.webapp.app_object import app
+  app.register_blueprint(bp)
+except:
+  pass
