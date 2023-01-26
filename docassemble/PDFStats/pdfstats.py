@@ -3,12 +3,13 @@
 import os
 import re
 import json
+from typing import Union
 import uuid
 from hashlib import sha256
 
 import textstat
 import pandas
-from flask import Blueprint, flash, request, redirect, url_for, current_app
+from flask import Blueprint, flash, render_template_string, request, redirect, url_for, current_app
 from werkzeug.utils import secure_filename
 
 import formfyxer
@@ -16,8 +17,10 @@ from formfyxer import lit_explorer
 
 try:
   from docassemble.webapp.app_object import csrf
-  from docassemble.base.util import get_config
+  from docassemble.base.util import get_config, path_and_mimetype
+  INSIDE_DOCASSEMBLE:bool = True
 except:
+  INSIDE_DOCASSEMBLE:bool = False
   csrf = type('', (), {})
   # No-op decorator (csrf.exempt is only required inside Docassemble)
   csrf.exempt = lambda func: func
@@ -31,6 +34,7 @@ except:
 
 bp = Blueprint('pdfstats', __name__, url_prefix='/pdfstats')
 
+SITE_ROOT = os.path.realpath(os.path.dirname(__file__))
 UPLOAD_FOLDER = '/tmp'
 ALLOWED_EXTENSIONS = {'pdf'}
 
@@ -46,7 +50,8 @@ def valid_uuid(file_id):
 def valid_hash(hash):
     return bool(re.match(r"^[A-Fa-f0-9]{64}$", hash))
 
-def minutes_to_hours(minutes:float)->str:
+def minutes_to_hours(minutes:Union[float,int])->str:
+  minutes = round(minutes)
   if minutes < 2:
     return "1 minute"
   if minutes > 60:
@@ -55,51 +60,14 @@ def minutes_to_hours(minutes:float)->str:
   else:
     return f"{minutes} minute{'s' if minutes > 1 else ''}"
 
-upload_form = '''
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Upload PDF</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
-    <style>
-    .suffolk-blue {
-        background-color: #002e60;
-    }
-    .upload-centered {
-        width: 100%;
-        max-width: 330px;
-        padding: 15px;
-        margin: auto;
-    }
-    </style>
-  </head>
-<body class="text-center">
-<nav class="navbar navbar-dark suffolk-blue">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="https://suffolklitlab.org">
-  <img src="https://apps.suffolklitlab.org/packagestatic/docassemble.MassAccess/lit_logo_light.png?v=0.3.0" alt="Logo" width="30" height="24" class="d-inline-block align-text-top"/>
-  Suffolk LIT Lab: Rate My PDF
-  </a>
-  </div>
-</nav>    
-<main class="upload-centered">
-    <form method=post enctype=multipart/form-data>
-    <h1 class="h3 mb-3 fw-normal">Upload a PDF</h1>
-
-    <div>
-        <label for="file" class="form-label">PDF file</label>
-        <input class="form-control form-control-md" id="file" name="file" type="file">
-    </div>    
-
-        <button type="submit" class="btn btn-primary mb-3 mt-3">Upload file</button>
-  </form>
-</main>
-</body>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-u1OknCvxWvY5kfmNBILK2hRnQC3Pr17a+RTT6rIHI7NnikvbZlHgTPOOmMi466C8" crossorigin="anonymous"></script>
-</html>
-    '''
+def get_template_from_static_dir(template_name:str) -> str:
+  if INSIDE_DOCASSEMBLE:
+    path = path_and_mimetype(f"data/static/{template_name}")[0]
+  else:
+    path = os.path.join(SITE_ROOT, "data/static/", template_name)
+  with open(path) as f:
+    template_str = f.read()
+  return template_str
 
 @bp.route('/', methods=['GET', 'POST'])
 @csrf.exempt
@@ -132,7 +100,7 @@ def upload_file():
             with open(os.path.join(to_path, "stats.json"), "w") as stats_file:
                 stats_file.write(json.dumps(stats))
             return redirect(url_for('pdfstats.view_stats', file_hash=intermediate_dir))
-    return upload_form
+    return render_template_string(get_template_from_static_dir("upload_file.html"))
 
 from flask import send_from_directory
 
@@ -145,6 +113,11 @@ def get_pdf_from_dir(file_hash):
         if f.endswith(".pdf"):
             return f
     return None
+
+
+@bp.app_template_filter()
+def format_number(number:Union[float,str]):
+  return "{:,.2f}".format(float(number))
 
 
 @bp.route('/download/<file_hash>')
@@ -208,275 +181,31 @@ def view_stats(file_hash):
     def get_data(k):
       return f'<font size="1">Mean: {metric_means[k]:.2f}, Std. {metric_stddev[k]:.2f}</font>'
 
-    title = stats.get('title', file_hash)
-    complexity_score = formfyxer.form_complexity(stats)
     word_count = len(stats.get("text").split(" "))
-    difficult_word_count = textstat.difficult_words(stats.get("text"))
-    return f"""
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Stats for { title }</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
-    <style>
-    .suffolk-blue {{
-        background-color: #002e60;
-    }}
-    .table .data-good {{
-        background-color: #66ff66;
-    }}
-    .table .data-good:before {{
-        content: "☑️"
-    }}
-    .data-warn {{
-        background-color: #fdfd66;
-    }}
-    .table .data-warn:before {{
-        content: "⚠️"
-    }}
-    .table .data-bad {{
-        background-color: #ef6161;
-    }}
-    .data-bad:before {{
-        content: "❌"
-    }}
-    a.btn-primary {{
-        margin-left: auto;
-        margin-right: auto;
-        display: block;
-        width: 175px;
-    }}
-    </style>
-  </head>
-<body>
-<nav class="navbar navbar-dark suffolk-blue">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="https://suffolklitlab.org">
-  <img src="https://apps.suffolklitlab.org/packagestatic/docassemble.MassAccess/lit_logo_light.png?v=0.3.0" alt="Logo" width="30" height="24" class="d-inline-block align-text-top"/>
-  Suffolk LIT Lab: Rate My PDF
-  </a>
-  </div>
-</nav>
-
-<main style="max-width: 800px; margin-left: auto; margin-right: auto; padding-left: 8px;">
-<h1 class="pb-2 border-bottom text-center">File statistics for <span class="text-break">{ title }</span></h1>
-<p>
-<a class="btn btn-primary" href="/pdfstats/download/{file_hash}" role="button">Download the file</a>
-</p>
-<br/>
-<table class="table text-center">
-    <thead>
-    <tr>
-      <th scope="col">Statistic name</th>
-      <th scope="col">Value</th>
-      <th scope="col">Target + Compare</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr>
-    <th scope="row">Complexity Score</th>
-    <td class="{get_class("complexity score", complexity_score)}">{ "{:.2f}".format(complexity_score) }</td>
-    <td>Lower is better, see <a href="#flush-collapseFour">the footnotes</a> for more information.<br/>{get_data("complexity score")}</td>
-    </tr>
-    <tr>
-    <th scope="row">Time to read</th>
-    <td>
-    About { minutes_to_hours(int(word_count / 150)) }
-    </td>
-    <td>Assuming 150 words per minute reading speed.</td>
-    </tr>
-    <tr>
-    <th scope="row">Time to answer</th>
-    <td class="{get_class("time to answer", stats.get("time to answer", (0,0))[0])}">
-    About { minutes_to_hours(round(stats.get("time to answer", (0,0))[0])) }, plus or minus { minutes_to_hours(round(stats.get("time to answer", (0,0))[1])) }
-    </td>
-    <td>The variation covers 1 standard deviation. See <a href="#flush-collapseThree">the footnotes</a> for more information.</td>
-    </tr>
-    <tr>
-    <th scope="row">
-    Consensus reading grade level
-    </th>
-    <td class="{get_class("reading grade level")}">Grade { int(stats.get("reading grade level")) }</td>
-    <td>Target is <a href="https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/style_guide/readability#target-reading-level">4th-6th grade</a><br/>{get_data("reading grade level")}</td>
-    </tr>
-    <tr>
-    <th scope="row">
-    Number of pages
-    </th>
-    <td class="{get_class("pages")}">{ stats.get("pages") }</td>
-    <td>{get_data("pages")}</td>
-    </tr>
-    <tr>
-    <th scope="row">
-    Number of fields
-    </th>
-    <td class="{get_class("total fields")}">{ len(stats.get("fields",[])) }</td>
-    <td>{get_data("total fields")}</td>    
-    </tr>
-    <tr>
-    <th scope="row">
-    Average number of fields per page
-    </th>
-    <td class="{get_class("avg fields per page")}">{float(stats.get("avg fields per page",0)):.1f}</td>
-    <td>Target is < 15<br/>{get_data("avg fields per page")}</td>
-    </tr>
-    <tr>
-    <th scope="row">
-    Number of sentences per page
-    </th>
-    <td class="{get_class("sentences per page")}">{ stats.get("sentences per page") }</td>
-    <td>{get_data("sentences per page")}</td>
-    </tr>
-    <tr>
-    <th scope="row">
-    Word count
-    </th>
-    <td>{ word_count } ({float(word_count/stats.get("pages",1.0)):.1f} per page)</td>
-    <td>Users <a href="https://www.nngroup.com/articles/how-little-do-users-read/">read as little as 20% of the content</a> on a longer page. Try to keep word count to 110 words.</td>
-    </tr>
-    <tr>
-    <th scope="row">
-    Number of "difficult words"
-    </th>
-    <td class="{get_class("difficult word percent")}">{ difficult_word_count } <br/> ({(stats.get("difficult word percent") * 100):.1f}%)</td>
-    <td>May include inflections of some "easy" words. Target is < 5% <br/>{get_data("difficult word percent")}</td>
-    </tr>
-    <tr>
-    <th scope="row">
-    Percent of sentences with passive voice
-    </th>
-    <td>{stats.get("number of passive voice sentences",0) / stats.get("number of sentences",1) * 100:.1f}%</td>
-    <td>Target is < 5%</td>
-    </tr>
-    <tr>
-    <th scope="row">
-    Number of citations
-    </th>
-    <td class="{get_class("citation count")}">{ len(stats.get("citations",[])) }</td>
-    <td>Avoid using citations in court forms.<br/>{get_data("citation count")}</td>
-    </tr>
-    </tbody>
-</table>
-
-<h2 class="pb-2 border-bottom text-center">Ideas for Improvements</h2>
-
-{ "<p>Here's an idea for a new title*: <b>" + stats["suggested title"] + "</b></p>" if stats.get("suggested title") else ""}
-
-<p>Here's a idea for an easy-to-read description of the form*:
-<div class="card text-left">
-  <div class="card-body">
-   { stats["description"] }
-  </div>
-</div>
-</p>
-
-
-<div class="accordion text-center" id="fullTextAccordion">
-  <div class="accordion-item">
-    <h2 class="accordion-header" id="flush-headingOne">
-      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">
-        Full text of form
-      </button>
-    </h2>
-    <div id="flush-collapseOne" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#fullTextAccordion">
-      <div class="accordion-body">
-        { stats.get("text") }
-      </div>
-    </div>
-  </div>
-  <div class="accordion-item">
-    <h2 class="accordion-header" id="flush-headingTwo">
-      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTwo" aria-expanded="false" aria-controls="flush-collapseTwo">
-        Citations
-      </button>
-    </h2>
-    <div id="flush-collapseTwo" class="accordion-collapse collapse" aria-labelledby="flush-headingTwo" data-bs-parent="#fullTextAccordion">
-      <div class="accordion-body">
-        { "<br/>".join(stats.get("citations",[])) }
-      </div>
-    </div>
-  </div>
-  <div class="accordion-item">
-    <h2 class="accordion-header" id="flush-headingThree">
-      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseThree" aria-expanded="false" aria-controls="flush-collapseThree">
-        Information about fields
-      </button>
-    </h2>
-    <div id="flush-collapseThree" class="accordion-collapse collapse" aria-labelledby="flush-headingThree" data-bs-parent="#fullTextAccordion">
-      <div class="accordion-body">
-      <p><b>Note: "time to answer" is drawn as a random sample from an assumed normal distribution of times to answer, with a pre-set standard deviation and mean that depends
-      on the answer type and allowed number of characters. It will likely be a different number if you refresh and recalculate.</b></p>
-      { pandas.DataFrame.from_records(stats.get("debug fields")).to_html() if stats.get("debug fields") else [] }
-      </div>
-    </div>
-  </div>
-  <div class="accordion-item">
-    <h2 class="accordion-header" id="flush-headingFour">
-      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseFour" aria-expanded="false" aria-controls="flush-collapseFour">
-        Information about complexity
-      </button>
-    </h2>
-    <div id="flush-collapseFour" class="accordion-collapse collapse" aria-labelledby="flush-headingFour" data-bs-parent="#fullTextAccordion">
-      <div class="accordion-body">
-      <p><b>Note: this is a list of each metric and its specific score; they are summed together to get the total score</b></p>
-      <table class="table">
-      <thead>
-        <tr>
-          <th>Metric name</th>
-          <th>Original value</th>
-          <th>Weighted value</th>
-        </tr>
-      </thead>
-      <tbody>
-        { chr(10).join(['<tr><th scope="row">{}</th><td>{:.2f}</td><td>{:.2f}</td></tr>'.format(v[0], v[1], v[2]) for v in lit_explorer._form_complexity_per_metric(stats)]) }
-      </tbody>
-      </table>
-      </div>
-    </div>
-  </div>
-
-</div>
-<br/>
-
-
-<a class="btn btn-primary" href="/pdfstats" role="button">Upload a new PDF</a>
-
-
-<br/>
-
-<p>Rate My PDF is a project of the <a href="https://suffolklitlab.org">Suffolk LIT Lab</a>
-It is part of our broader <a href="https://suffolklitlab.org/docassemble-AssemblyLine-documentation/">Document
-Assembly Line</a> project along with our <a href="https://suffolklitlab.org/form-explorer/">Form
-Explorer</a>.
-</p>
-<p>The results listed here, especially our "time to complete" scores, are in an experimental
-status and should not be relied on. We welcome feedback to improve our scoring!</p>
-
-<p>Feedback? Email <a href="mailto:massaccess@suffolk.edu">massaccess@suffolk.edu</a></p>
-
-<br/>
-
-<p>*: These suggestions are provided by <a href="https://openai.com/blog/gpt-3-apps/">OpenAI's GPT3</a>.</p>
-
-</main>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-u1OknCvxWvY5kfmNBILK2hRnQC3Pr17a+RTT6rIHI7NnikvbZlHgTPOOmMi466C8" crossorigin="anonymous"></script>
-    <script>
-    (function($){{
-        $(document).ready(function() {{
-            var accordSec = window.location.hash;
-            if (accordSec.length) {{
-                $(accordSec).collapse("show");
-            }}
-        }});
-     }})(jQuery);
-    </script>
-</body>
-
-</html>
-    """
+    if stats.get("number of passive voice sentences") and stats.get("number of sentences"):
+      passive_percent = int(stats["number of passive voice sentences"]) / stats["number of sentences"] * 100
+    else:
+      passive_percent = 0
+    vars = {
+      "stats": stats,
+      "passive_percent": passive_percent,
+      "title": stats.get('title', file_hash),
+      "complexity_score": formfyxer.form_complexity(stats),
+      "word_count": word_count,
+      "word_count_per_page": word_count/float(stats.get("pages") or 1.0),
+      "difficult_word_count": textstat.difficult_words(stats.get("text")),
+      "get_class": get_class,
+      "get_data":  get_data,
+      "minutes_to_hours": minutes_to_hours,
+      "file_hash": file_hash,
+      "int": int,
+      "pandas": pandas,
+      "lit_explorer": lit_explorer,
+    }
+    return render_template_string(
+      get_template_from_static_dir("view_stats.html"),
+      **vars,
+    )
 
 try:
   from docassemble.webapp.app_object import app

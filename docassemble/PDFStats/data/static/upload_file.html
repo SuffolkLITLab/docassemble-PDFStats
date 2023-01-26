@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Upload PDF</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
+    <style>
+    .suffolk-blue {
+        background-color: #002e60;
+    }
+    .upload-centered {
+        width: 100%;
+        max-width: 330px;
+        padding: 15px;
+        margin: auto;
+    }
+    </style>
+  </head>
+<body class="text-center">
+<nav class="navbar navbar-dark suffolk-blue">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="https://suffolklitlab.org">
+  <img src="https://apps.suffolklitlab.org/packagestatic/docassemble.MassAccess/lit_logo_light.png?v=0.3.0" alt="Logo" width="30" height="24" class="d-inline-block align-text-top"/>
+  Suffolk LIT Lab: Rate My PDF
+  </a>
+  </div>
+</nav>    
+<main class="upload-centered">
+    <form method=post enctype=multipart/form-data>
+    <h1 class="h3 mb-3 fw-normal">Upload a PDF</h1>
+
+    <div>
+        <label for="file" class="form-label">PDF file</label>
+        <input class="form-control form-control-md" id="file" name="file" type="file">
+    </div>    
+
+        <button type="submit" class="btn btn-primary mb-3 mt-3">Upload file</button>
+  </form>
+</main>
+</body>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-u1OknCvxWvY5kfmNBILK2hRnQC3Pr17a+RTT6rIHI7NnikvbZlHgTPOOmMi466C8" crossorigin="anonymous"></script>
+</html>
