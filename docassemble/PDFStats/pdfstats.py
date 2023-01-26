@@ -19,10 +19,15 @@ try:
   from docassemble.base.util import get_config
 except:
   csrf = type('', (), {})
-  # No-op decorator
+  # No-op decorator (csrf.exempt is only required inside Docassemble)
   csrf.exempt = lambda func: func
   def get_config(var):
       return current_app.config.get(var.replace(" ", "_").upper())
+  import secrets
+  # This generates a unique secret key every time Flask restarts
+  # Maybe that will do something weird in the future but for now we're
+  # only using this for the `flash()` function
+  current_app.config.update(SECRET_KEY=secrets.token_hex())
 
 bp = Blueprint('pdfstats', __name__, url_prefix='/pdfstats')
 
