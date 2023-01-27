@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Stats for {{ title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
+    <style>
+    .suffolk-blue {
+        background-color: #002e60;
+    }
+    .table .data-good {
+        background-color: #66ff66;
+    }
+    .table .data-good:before {
+        content: "☑️"
+    }
+    .data-warn {
+        background-color: #fdfd66;
+    }
+    .table .data-warn:before {
+        content: "⚠️"
+    }
+    .table .data-bad {
+        background-color: #ef6161;
+    }
+    .data-bad:before {
+        content: "❌"
+    }
+    a.btn-primary {
+        margin-left: auto;
+        margin-right: auto;
+        display: block;
+        width: 175px;
+    }
+    </style>
+  </head>
+<body>
+<nav class="navbar navbar-dark suffolk-blue">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="https://suffolklitlab.org">
+  <img src="https://apps.suffolklitlab.org/packagestatic/docassemble.MassAccess/lit_logo_light.png?v=0.3.0" alt="Logo" width="30" height="24" class="d-inline-block align-text-top"/>
+  Suffolk LIT Lab: Rate My PDF
+  </a>
+  </div>
+</nav>
+
+<main style="max-width: 800px; margin-left: auto; margin-right: auto; padding-left: 8px;">
+<h1 class="pb-2 border-bottom text-center">File statistics for <span class="text-break">{{ title }}</span></h1>
+<p>
+<a class="btn btn-primary" href="/pdfstats/download/{{ file_hash }}" role="button">Download the file</a>
+</p>
+<br/>
+<table class="table text-center">
+    <thead>
+    <tr>
+      <th scope="col">Statistic name</th>
+      <th scope="col">Value</th>
+      <th scope="col">Target + Compare</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <th scope="row">Complexity Score</th>
+    <td class="{{ get_class("complexity score", complexity_score) | safe }}">{{ complexity_score | format_number }}</td>
+    <td>Lower is better, see <a href="#flush-collapseFour">the footnotes</a> for more information.<br/>{{ get_data("complexity score") | safe }}</td>
+    </tr>
+    <tr>
+    <th scope="row">Time to read</th>
+    <td>
+    About {{ minutes_to_hours(word_count / 150) }}
+    </td>
+    <td>Assuming 150 words per minute reading speed.</td>
+    </tr>
+    <tr>
+    <th scope="row">Time to answer</th>
+    <td class="{{ get_class("time to answer", stats.get("time to answer", (0,0))[0]) | safe }}">
+    About {{ minutes_to_hours(stats.get("time to answer", (0,0))[0]) }}, plus or minus {{ minutes_to_hours(stats.get("time to answer", (0,0))[1]) }}
+    </td>
+    <td>The variation covers 1 standard deviation. See <a href="#flush-collapseThree">the footnotes</a> for more information.</td>
+    </tr>
+    <tr>
+    <th scope="row">
+    Consensus reading grade level
+    </th>
+    <td class="{{ get_class("reading grade level") }}">Grade {{ int(stats.get("reading grade level")) | safe }}</td>
+    <td>Target is <a href="https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/style_guide/readability#target-reading-level">4th-6th grade</a><br/>{{ get_data("reading grade level") | safe }}</td>
+    </tr>
+    <tr>
+    <th scope="row">
+    Number of pages
+    </th>
+    <td class="{{ get_class("pages") }}">{{ stats.get("pages") | safe }}</td>
+    <td>{{ get_data("pages") | safe }}</td>
+    </tr>
+    <tr>
+    <th scope="row">
+    Number of fields
+    </th>
+    <td class="{{ get_class("total fields") | safe }}">{{ stats.get("fields",[]) | length }}</td>
+    <td>{{ get_data("total fields") | safe }}</td>    
+    </tr>
+    <tr>
+    <th scope="row">
+    Average number of fields per page
+    </th>
+    <td class="{{ get_class("avg fields per page") | safe }}">{{ stats.get("avg fields per page",0) | format_number }}</td>
+    <td>Target is < 15<br/>{{ get_data("avg fields per page") }}</td>
+    </tr>
+    <tr>
+    <th scope="row">
+    Number of sentences per page
+    </th>
+    <td class="{{ get_class("sentences per page") | safe }}">{{ stats.get("sentences per page") }}</td>
+    <td>{{ get_data("sentences per page") | safe }}</td>
+    </tr>
+    <tr>
+    <th scope="row">
+    Word count
+    </th>
+    <td>{{ word_count }} ({{ word_count_per_page | format_number }} per page)</td>
+    <td>Users <a href="https://www.nngroup.com/articles/how-little-do-users-read/">read as little as 20% of the content</a> on a longer page. Try to keep word count to 110 words.</td>
+    </tr>
+    <tr>
+    <th scope="row">
+    Number of "difficult words"
+    </th>
+    <td class="{{ get_class("difficult word percent") | safe }}">{{ difficult_word_count }} <br/> ({{ (stats.get("difficult word percent") * 100) | format_number }}%)</td>
+    <td>May include inflections of some "easy" words. Target is < 5% <br/>{{ get_data("difficult word percent") | safe }}</td>
+    </tr>
+    <tr>
+    <th scope="row">
+    Percent of sentences with passive voice
+    </th>
+    <td>{{ passive_percent | format_number }}%</td>
+    <td>Target is < 5%</td>
+    </tr>
+    <tr>
+    <th scope="row">
+    Number of citations
+    </th>
+    <td class="{{ get_class("citation count") | safe }}">{{ stats.get("citations",[]) | length }}</td>
+    <td>Avoid using citations in court forms.<br/>{{ get_data("citation count") | safe }}</td>
+    </tr>
+    </tbody>
+</table>
+
+<h2 class="pb-2 border-bottom text-center">Ideas for Improvements</h2>
+{% if stats.get("suggested title") and stats["suggested title"].lower().strip() != "abortthisnow." %}
+<p>
+    Here's an idea for a new title*: 
+    <b>{{ stats["suggested title"] }}</b>
+</p>
+{% endif %}
+{% if stats.get("description") and stats["description"].lower().strip() != "abortthisnow." %}
+<p>Here's a idea for an easy-to-read description of the form*:
+<div class="card text-left">
+  <div class="card-body">
+   {{ stats["description"] }}
+  </div>
+</div>
+</p>
+{% endif %}
+
+
+<div class="accordion text-center" id="fullTextAccordion">
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="flush-headingOne">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">
+        Full text of form
+      </button>
+    </h2>
+    <div id="flush-collapseOne" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#fullTextAccordion">
+      <div class="accordion-body">
+        {{ stats.get("text") }}
+      </div>
+    </div>
+  </div>
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="flush-headingTwo">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTwo" aria-expanded="false" aria-controls="flush-collapseTwo">
+        Citations
+      </button>
+    </h2>
+    <div id="flush-collapseTwo" class="accordion-collapse collapse" aria-labelledby="flush-headingTwo" data-bs-parent="#fullTextAccordion">
+      <div class="accordion-body">
+        {% for cite in stats.get("citations",[]) %}
+        <br/>
+        {{ cite }}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="flush-headingThree">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseThree" aria-expanded="false" aria-controls="flush-collapseThree">
+        Information about fields
+      </button>
+    </h2>
+    <div id="flush-collapseThree" class="accordion-collapse collapse" aria-labelledby="flush-headingThree" data-bs-parent="#fullTextAccordion">
+      <div class="accordion-body">
+      <p><b>Note: "time to answer" is drawn as a random sample from an assumed normal distribution of times to answer, with a pre-set standard deviation and mean that depends
+      on the answer type and allowed number of characters. It will likely be a different number if you refresh and recalculate.</b></p>
+      {{ pandas.DataFrame.from_records(stats.get("debug fields")).to_html() if stats.get("debug fields") else [] }}
+      </div>
+    </div>
+  </div>
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="flush-headingFour">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseFour" aria-expanded="false" aria-controls="flush-collapseFour">
+        Information about complexity
+      </button>
+    </h2>
+    <div id="flush-collapseFour" class="accordion-collapse collapse" aria-labelledby="flush-headingFour" data-bs-parent="#fullTextAccordion">
+      <div class="accordion-body">
+      <p><b>Note: this is a list of each metric and its specific score; they are summed together to get the total score</b></p>
+      <table class="table">
+      <thead>
+        <tr>
+          <th>Metric name</th>
+          <th>Original value</th>
+          <th>Weighted value</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in lit_explorer._form_complexity_per_metric(stats) %}
+        <tr>
+            <th scope="row">row[0]</th>
+                <td>
+                    {{ row[1] | format_number }}
+                </td>
+                <td>
+                    {{ row[2] | format_number }}
+                </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+<br/>
+
+
+<a class="btn btn-primary" href="/pdfstats" role="button">Upload a new PDF</a>
+
+
+<br/>
+
+<p>Rate My PDF is a project of the <a href="https://suffolklitlab.org">Suffolk LIT Lab</a>
+It is part of our broader <a href="https://suffolklitlab.org/docassemble-AssemblyLine-documentation/">Document
+Assembly Line</a> project along with our <a href="https://suffolklitlab.org/form-explorer/">Form
+Explorer</a>.
+</p>
+<p>The results listed here, especially our "time to complete" scores, are in an experimental
+status and should not be relied on. We welcome feedback to improve our scoring!</p>
+
+<p>Feedback? Email <a href="mailto:massaccess@suffolk.edu">massaccess@suffolk.edu</a></p>
+
+<br/>
+
+<p>*: These suggestions are provided by <a href="https://openai.com/blog/gpt-3-apps/">OpenAI's GPT3</a>.</p>
+
+</main>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-u1OknCvxWvY5kfmNBILK2hRnQC3Pr17a+RTT6rIHI7NnikvbZlHgTPOOmMi466C8" crossorigin="anonymous"></script>
+    <script>
+    (function($){
+        $(document).ready(function() {
+            var accordSec = window.location.hash;
+            if (accordSec.length) {
+                $(accordSec).collapse("show");
+            }
+        });
+     })(jQuery);
+    </script>
+</body>
+
+</html>
