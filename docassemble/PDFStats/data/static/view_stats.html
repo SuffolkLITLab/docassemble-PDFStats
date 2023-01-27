@@ -152,7 +152,7 @@
     <b>{{ stats["suggested title"] }}</b>
 </p>
 {% endif %}
-{% if stats["description"].lower().strip() != "abortthisnow." %}
+{% if stats.get("description") and stats["description"].lower().strip() != "abortthisnow." %}
 <p>Here's a idea for an easy-to-read description of the form*:
 <div class="card text-left">
   <div class="card-body">
