@@ -146,7 +146,7 @@
 </table>
 
 <h2 class="pb-2 border-bottom text-center">Ideas for Improvements</h2>
-{% if stats["suggested title"].lower().strip() != "abortthisnow." %}
+{% if stats.get("suggested title") and stats["suggested title"].lower().strip() != "abortthisnow." %}
 <p>
     Here's an idea for a new title*: 
     <b>{{ stats["suggested title"] }}</b>
