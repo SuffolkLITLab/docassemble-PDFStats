@@ -33,6 +33,9 @@
         display: block;
         width: 175px;
     }
+    .passive-voice {
+        font-weight: bold;
+    }
     </style>
   </head>
 <body>
@@ -73,11 +76,11 @@
     <td>Assuming 150 words per minute reading speed.</td>
     </tr>
     <tr>
-    <th scope="row">Time to answer</th>
+    <th scope="row">Aggregate answer difficulty</th>
     <td class="{{ get_class("time to answer", stats.get("time to answer", (0,0))[0]) | safe }}">
-    About {{ minutes_to_hours(stats.get("time to answer", (0,0))[0]) }}, plus or minus {{ minutes_to_hours(stats.get("time to answer", (0,0))[1]) }}
+    {{ stats.get("time to answer", (0,0))[0] | format_number }}, plus or minus {{ stats.get("time to answer", (0,0))[1] | format_number }}
     </td>
-    <td>The variation covers 1 standard deviation. See <a href="#flush-collapseThree">the footnotes</a> for more information.</td>
+    <td>Answer difficulty roughly corresponds to the predicted time to answer an individual question on a form in minutes, based on the expected answer length and heuristics that classify the difficulty in retrieving or creating the answer. The variation covers 1 standard deviation. See <a href="#flush-collapseThree">the footnotes</a> for more information.</td>
     </tr>
     <tr>
     <th scope="row">
@@ -105,7 +108,7 @@
     Average number of fields per page
     </th>
     <td class="{{ get_class("avg fields per page") | safe }}">{{ stats.get("avg fields per page",0) | format_number }}</td>
-    <td>Target is < 15<br/>{{ get_data("avg fields per page") }}</td>
+    <td>Target is < 15<br/>{{ get_data("avg fields per page") | safe }}</td>
     </tr>
     <tr>
     <th scope="row">
@@ -172,7 +175,7 @@
     </h2>
     <div id="flush-collapseOne" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#fullTextAccordion">
       <div class="accordion-body">
-        {{ stats.get("text") }}
+        {{ stats.get("original_text") }}
       </div>
     </div>
   </div>
@@ -201,7 +204,28 @@
       <div class="accordion-body">
       <p><b>Note: "time to answer" is drawn as a random sample from an assumed normal distribution of times to answer, with a pre-set standard deviation and mean that depends
       on the answer type and allowed number of characters. It will likely be a different number if you refresh and recalculate.</b></p>
-      {{ pandas.DataFrame.from_records(stats.get("debug fields")).to_html() if stats.get("debug fields") else [] }}
+      <table>
+        <thead>
+            <tr>
+                <th>Normalized field name</th>
+                <th>Type</th>
+                <th>Size</th>
+                <th>Answer type</th>
+                <th>Time to answer</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for field in stats.get("debug fields") %}
+        <tr>
+            <td>{{ field["name"] }}</td>
+            <td>{{ field["input type"] }}</td>
+            <td>{{ field["max length"] }}</td>
+            <td>{{ field["inferred answer type"] }}</td>
+            <td>{{ minutes_to_hours(field["time to answer"][0]) }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
       </div>
     </div>
   </div>
@@ -225,7 +249,7 @@
       <tbody>
         {% for row in lit_explorer._form_complexity_per_metric(stats) %}
         <tr>
-            <th scope="row">row[0]</th>
+            <th scope="row">{{ row[0] }}</th>
                 <td>
                     {{ row[1] | format_number }}
                 </td>
@@ -238,6 +262,23 @@
       </table>
       </div>
     </div>
+    </div>
+
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="flush-headingPassiveSentences">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapsePassiveSentences" aria-expanded="false" aria-controls="flush-collapsePassiveSentences">
+            Sentences with detected passive voice
+          </button>
+        </h2>    
+    <div id="flush-collapsePassiveSentences" class=""accordion-collapse collapse" aria-labelledby="flush-headingPassiveSentences" data-bs-parent="passiveSentencesAccordion">
+        <div class=""accordion-body">
+        
+        {% for sentence in stats.get("passive sentences", []) %}
+        <br/>
+        {{ sentence | safe }}
+        {% endfor %}
+        </div>
+    </div>
   </div>
 
 </div>
@@ -249,13 +290,15 @@
 
 <br/>
 
-<p>Rate My PDF is a project of the <a href="https://suffolklitlab.org">Suffolk LIT Lab</a>
+<p>Rate My PDF is a project of the <a href="https://suffolklitlab.org">Suffolk LIT Lab</a>.
+
 It is part of our broader <a href="https://suffolklitlab.org/docassemble-AssemblyLine-documentation/">Document
 Assembly Line</a> project along with our <a href="https://suffolklitlab.org/form-explorer/">Form
 Explorer</a>.
 </p>
+
 <p>The results listed here, especially our "time to complete" scores, are in an experimental
-status and should not be relied on. We welcome feedback to improve our scoring!</p>
+state and should not be relied on. We welcome feedback to improve our scoring!</p>
 
 <p>Feedback? Email <a href="mailto:massaccess@suffolk.edu">massaccess@suffolk.edu</a></p>
 

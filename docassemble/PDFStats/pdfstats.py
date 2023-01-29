@@ -20,7 +20,7 @@ try:
   from docassemble.base.util import get_config, path_and_mimetype
   INSIDE_DOCASSEMBLE:bool = True
 except:
-  INSIDE_DOCASSEMBLE:bool = False
+  INSIDE_DOCASSEMBLE = False
   csrf = type('', (), {})
   # No-op decorator (csrf.exempt is only required inside Docassemble)
   csrf.exempt = lambda func: func
