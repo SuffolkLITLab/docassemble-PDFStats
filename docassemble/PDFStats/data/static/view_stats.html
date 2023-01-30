@@ -273,9 +273,9 @@
     <div id="flush-collapsePassiveSentences" class=""accordion-collapse collapse" aria-labelledby="flush-headingPassiveSentences" data-bs-parent="passiveSentencesAccordion">
         <div class=""accordion-body">
         
-        {% for sentence in stats.get("passive sentences", []) %}
+        {% for sentence_tuple in stats.get("passive sentences", []) %}
         <br/>
-        {{ sentence | safe }}
+        {{ highlight_text(*sentence_tuple, highlight_class="passive-voice") | safe }}
         {% endfor %}
         </div>
     </div>
