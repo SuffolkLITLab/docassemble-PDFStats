@@ -88,7 +88,7 @@ def highlight_text(
     highlighted = sentence
     for frag in fragments:
         highlighted = re.sub(
-            frag, f'<span class="{ highlight_class }">{frag}</span>', sentence
+            re.escape(frag), re.escape(f'<span class="{ highlight_class }">{frag}</span>'), sentence
         )
     return highlighted
 
