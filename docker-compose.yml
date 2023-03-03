@@ -12,8 +12,13 @@ services:
       - 443:443
     env_file: .env
     volumes:
-      - ./nginx/conf/:/etc/nginx/conf.d/:rw
-      - ./certbot/www:/var/certbot/:rw
-      - ./certbot/www:/var/www/certbot/:rw
-      - ./certbot/conf/:/etc/nginx/ssl/:rw
-      - ./certbot/conf:/etc/letsencrypt/:rw
+      - nginx_conf:/etc/nginx/conf.d/:rw
+      - certbot_www:/var/certbot/:rw
+      - certbot_www:/var/www/certbot/:rw
+      - certbot_conf:/etc/nginx/ssl/:rw
+      - certbot_conf:/etc/letsencrypt/:rw
+
+volumes:
+  nginx_conf:
+  certbot_www:
+  certbot_conf:
