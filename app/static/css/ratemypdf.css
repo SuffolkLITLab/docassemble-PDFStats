@@ -1,0 +1,124 @@
+body {
+  padding: 0 1em 0 1em;
+}
+
+/* Style for the headline */
+h1 {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 1px 1px #333;
+  }
+  
+  /* Style for the upload input
+  #pdfUpload {
+    display: none;
+  }
+   */
+  .input-group-text {
+    background-color: #007bff;
+    color: #fff;
+    border-color: #007bff;
+  }
+  
+  .input-group-text:hover {
+    background-color: #0069d9;
+    border-color: #0062cc;
+  }
+  
+  /* Style for the feature cards */
+  .card {
+    border: none;
+    box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.05);
+  }
+  
+  .card-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+  }
+  
+  .card-text {
+    font-size: 1rem;
+    color: #555;
+  }
+  
+  /* Custom color for the cards */
+  .card:nth-child(1) {
+    background-color: #ffc107;
+  }
+  
+  .card:nth-child(2) {
+    background-color: #28a745;
+  }
+  
+  .card:nth-child(3) {
+    background-color: #007bff;
+  }
+  
+  /* Hover effect for the cards */
+  .card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+  }
+  
+  /* Style for the header section */
+  .header-section {
+    background-color: #002e60;
+    height: 400px;
+    width: 100%;
+    position: relative;
+  }
+  
+  .header-text {
+    color: #fff;
+    text-align: center;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+  }
+  
+ /* Custom styles for the complementary color band */
+.complementary-color {
+    background-color: #e5e5e5;
+    height: 200px;
+  }
+  
+  /* Custom styles for the curved line */
+  .curved-line {
+    position: absolute;
+    bottom: -50px;
+    width: 100%;
+    height: 50px;
+    background-color: #002e60;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 calc(100% - 30px));
+  }
+
+  .checkmark-image {
+    position: relative;
+    background-image: url("../img/checkmark-hand-drawn-outline.svg");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center center;
+    height: 200px;
+    margin-top: -300px;
+    z-index: 2;
+  }  
+
+  /* Custom styles for the footer */
+  footer {
+    background-color: #f2f2f2;
+    color: #555;
+    padding: 20px 0;
+  }
+  
+  footer a {
+    color: #007bff;
+  }
+  
+  footer a:hover {
+    color: #0069d9;
+  }
+  

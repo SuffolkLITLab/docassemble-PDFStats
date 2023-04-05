@@ -146,7 +146,7 @@ def upload_file():
             with open(os.path.join(to_path, "stats.json"), "w") as stats_file:
                 stats_file.write(json.dumps(stats))
             return redirect(url_for("pdfstats.view_stats", file_hash=intermediate_dir))
-    return render_template_string(get_template_from_static_dir("upload_file.html"))
+    return render_template_string(get_template_from_static_dir("ratemypdf.html"))
 
 
 def get_pdf_from_dir(file_hash):
