@@ -259,7 +259,8 @@ def view_stats(file_hash):
         "lit_explorer": lit_explorer,
     }
     return render_template_string(
-        get_template_from_static_dir("view_stats.html"),
+        # get_template_from_static_dir("view_stats.html"),
+        get_template_from_static_dir("ratemypdf_stats.html"),
         **vars,
     )
 

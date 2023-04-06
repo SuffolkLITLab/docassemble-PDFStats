@@ -6,7 +6,7 @@ RUN pip3 install certbot certbot-nginx certbot-dns-route53
 # NOTE: manual steps after this: docker exec into container
 # `certbot --nginx`, then edit `/etc/nginx/conf.d/nginx.conf` to have `server_name ratemypdf.com`
 # then `certbot install --cert-name ratemypdf.com`
-RUN pip install git+https://github.com/SuffolkLITLab/FormFyxer.git
+RUN pip install git+https://github.com/SuffolkLITLab/FormFyxer.git@do_both
 
 COPY . /docassemble
 WORKDIR /docassemble

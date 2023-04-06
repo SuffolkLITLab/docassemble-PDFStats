@@ -122,3 +122,154 @@ h1 {
     color: #0069d9;
   }
   
+
+    /* score related CSS */
+    .score-position-chart,
+    .percentage-position-chart {
+      position: relative;
+      width: 100%;
+      height: 20px;
+      background-color: #F0F0F0;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    
+    .score-position-chart__bar,
+    .percentage-position-chart__bar {
+      position: absolute;
+      bottom: 0;
+      height: 100%;
+    }
+    
+    .score-position-chart__bar--green,
+    .percentage-position-chart__bar--green {
+      background-color: #28A745;
+    }
+    
+    .score-position-chart__bar--red,
+    .percentage-position-chart__bar--red {
+      background-color: #DC3545;
+    }
+    
+    .score-position-chart__arrow,
+    .percentage-position-chart__arrow {
+      position: absolute;
+      bottom: 100%;
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: 0 5px 10px 5px;
+      transform: translateY(-50%) rotate(180deg);
+    }
+    
+    .score-position-chart__arrow--green,
+    .percentage-position-chart__arrow--green {
+      border-color: transparent transparent #28A745 transparent;
+    }
+    
+    .score-position-chart__arrow--red,
+    .percentage-position-chart__arrow--red {
+      border-color: transparent transparent #DC3545 transparent;
+    }
+    
+    .score-position-chart__label,
+    .percentage-position-chart__label {
+      position: absolute;
+      bottom: 100%;
+      font-size: 12px;
+      color: #888;
+      padding: 5px;
+      border-radius: 5px;
+      white-space: nowrap;
+      text-align: center;
+      width: 100%;
+    }
+    
+    .score-position-chart__label--score,
+    .percentage-position-chart__label--score {
+      font-weight: bold;
+    }
+    
+    .score-position-chart__label--median,
+    .percentage-position-chart__label--median,
+    .score-position-chart__label--mean,
+    .percentage-position-chart__label--mean {
+      position: absolute;
+      font-size: 10px;
+      color: #888;
+      white-space: nowrap;
+    }
+    
+    .score-position-chart__label--median::before,
+    .percentage-position-chart__label--median::before,
+    .score-position-chart__label--mean::before,
+    .percentage-position-chart__label--mean::before {
+      content: "";
+      position: absolute;
+      bottom: -5px;
+      width: 1px;
+      height: 10px;
+      background-color: #888;
+    }
+    
+    .score-position-chart__label--median::before,
+    .percentage-position-chart__label--median::before {
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    
+    .score-position-chart__label--mean::before,
+    .percentage-position-chart__label--mean::before {
+      right: 50%;
+      transform: translateX(50%);
+    }
+    
+    .score-position-chart__bar:hover ~ .score-position-chart__label,
+    .percentage-position-chart__bar:hover ~ .percentage-position-chart__label {
+      display: none;
+    }
+    
+    .score-position-chart__bar:hover ~ .score-position-chart__arrow,
+    .percentage-position-chart__bar:hover ~ .percentage-position-chart__arrow {
+      border-style: solid;
+    }
+  
+    .score-text,
+  .percentage-text {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    color: #333;
+  }
+  
+  
+  /* expand / hide */
+  a.fa-plus:before {
+    content: "\f067"; /* Unicode value for the minus sign icon */
+  }
+  
+  a[aria-expanded="true"] .fa-plus:before {
+    content: "\f068"; /* Unicode value for the plus sign icon */
+  }
+  
+  a.fa-plus:before,
+  a.fa-minus:before {
+    transition: all 0.2s ease-in-out; /* Add a transition to all properties */
+  }
+  
+  a[aria-expanded="false"] .fa-plus:before,
+  a[aria-expanded="true"] .fa-minus:before {
+    opacity: 0.5; /* Reduce opacity to make the transition smoother */
+    transform: rotate(0deg); /* Start with no rotation for plus sign and 180deg rotation for minus sign */
+  }
+  
+  a[aria-expanded="true"] .fa-plus:before,
+  a[aria-expanded="false"] .fa-minus:before {
+    opacity: 1; /* Increase opacity to make the transition smoother */
+    transform: rotate(180deg); /* End with 180deg rotation for plus sign and no rotation for minus sign */
+  }
+  

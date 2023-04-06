@@ -12,12 +12,16 @@
     <section class="header-section">
         <div class="header-text">
           <h1>Rate My PDF</h1>
-          <form>
-            <div class="input-group mb-3">
-              <input type="file" class="form-control" id="pdfUpload" accept=".pdf">
-              <label class="input-group-text" for="pdfUpload">Upload PDF</label>
-            </div>
+          <form method=post enctype=multipart/form-data>
+
+            <div>
+                <label for="file" class="form-label">PDF file</label>
+                <input class="form-control form-control-md" id="file" name="file" type="file">
+            </div>    
+        
+                <button type="submit" class="btn btn-primary mb-3 mt-3">Upload file</button>
           </form>
+
         </div>
         <div class="curved-line"></div>
       </section>
