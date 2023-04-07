@@ -25,8 +25,6 @@ from werkzeug.utils import secure_filename
 import formfyxer
 from formfyxer import lit_explorer
 
-INSIDE_DOCASSEMBLE = False
-
 import secrets
 
 # This generates a unique secret key every time Flask restarts
@@ -237,15 +235,6 @@ def view_stats(file_hash):
         "lit_explorer": lit_explorer,
     }
     return render_template_string(
-        # get_template_from_static_dir("view_stats.html"),
         get_template_from_static_dir("ratemypdf_stats.html"),
         **vars,
     )
-
-
-try:
-    from docassemble.webapp.app_object import app
-
-    app.register_blueprint(bp)
-except:
-    pass
