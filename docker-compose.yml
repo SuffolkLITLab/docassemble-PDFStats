@@ -17,7 +17,6 @@ services:
       - certbot_www:/var/www/certbot/:rw
       - certbot_conf:/etc/nginx/ssl/:rw
       - certbot_conf:/etc/letsencrypt/:rw
-
 volumes:
   nginx_conf:
   certbot_www:

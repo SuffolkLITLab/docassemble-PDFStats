@@ -1,0 +1,262 @@
+{% macro percent_widget(label, title, description, val, mean, std_dev) -%}
+<div class="mb-3">
+  <h4>{{ title }}
+    {% if description | length > 0 -%}
+    <a href="#{{label}}-info" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="{{label}}-info"><i class="fas fa-plus"></i></a>
+    {% endif -%}
+  </h4>
+  {% if description | length > 0 -%}
+  <div class="collapse" id="{{label}}-info">
+    <p>{{ description | safe }}</p>
+  </div>
+  {% endif -%}
+  <div class="percentage-position-chart">
+    {% if val > mean + std_dev %}
+    <div class="percentage-position-chart__bar percentage-position-chart__bar--red" style="width: {{ val * 100 }}%;"></div>
+    {% elif val > mean - std_dev %}
+    <div class="percentage-position-chart__bar percentage-position-chart__bar--yellow" style="width: {{ val * 100 }}%;"></div>
+    {% else %}
+    <div class="percentage-position-chart__bar percentage-position-chart__bar--green" style="width: {{ val * 100 }}%;"></div>                  
+    {% endif %}
+    <div class="percentage-position-chart__arrow percentage-position-chart__arrow--red" style="left: {{ val * 100}}%;"></div>
+    <div class="percentage-position-chart__label percentage-position-chart__label--score">Score: {{ val }}%</div>
+    <div class="percentage-position-chart__label percentage-position-chart__label--median">Median: 10%</div>
+    <div class="percentage-position-chart__label percentage-position-chart__label--mean">Mean: 12%</div>
+    <div class="percentage-text">{{ (val * 100) | format_number }}%</div>
+  </div>
+</div>
+{% endmacro -%}
+{% macro score_position_widget(label, title, description, val, mean, std_dev) -%}
+<div class="mb-3">
+  <h4>{{ title }} 
+    {% if description | length > 0 -%}
+    <a href="#{{ label }}-info" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="{{ label }}-info"><i class="fas fa-plus"></i></a>
+    {% endif -%}
+  </h4>
+  {% if description | length > 0 -%}
+  <div class="collapse" id="{{ label }}-info">
+    <p>{{ description | safe }}</p>
+  </div>
+  {% endif -%}
+  <div class="score-position-chart">
+    {% if val > mean + std_dev %}
+    <div class="score-position-chart__bar score-position-chart__bar--red" style="width: {{ percent_of_2_stddev(val, mean, std_dev) }}%;"></div>
+    <div class="score-position-chart__arrow score-position-chart__arrow--red" style="left: {{ percent_of_2_stddev(val, mean, std_dev) }}%;"></div>
+    {% elif val > mean - std_dev %}
+    <div class="score-position-chart__bar score-position-chart__bar--yellow" style="width: {{ percent_of_2_stddev(val, mean, std_dev) }}%;"></div>
+    <div class="score-position-chart__arrow score-position-chart__arrow--red" style="left: {{ percent_of_2_stddev(val, mean, std_dev) }}%;"></div>    
+    {% else %}
+    <div class="score-position-chart__bar score-position-chart__bar--green" style="width: {{ percent_of_2_stddev(val, mean, std_dev) }}%;"></div>
+    <div class="score-position-chart__arrow score-position-chart__arrow--green" style="left: {{ percent_of_2_stddev(val, mean, std_dev) }}%;"></div>
+    {% endif %}
+    <div class="score-position-chart__label score-position-chart__label--score">Score: 75</div>
+    <div class="score-position-chart__label score-position-chart__label--median">Median: 70</div>
+    <div class="score-position-chart__label score-position-chart__label--mean">Mean: 68</div>
+    <div class="score-text">{{ val | format_number }}</div>
+  </div>
+</div>
+{% endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PDF Statistics for {{ title }}</title>
+  <!-- Bootstrap 5 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/ratemypdf.css') }}">
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/checkmark-hand-drawn-outline.svg') }}">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-H+LK6+LavIeTpg6vZwJUZf6I1H6XbNfuvxvquyO+LrG+wAR8BHQWbJwvZTzTwsQ+iTFA9d9t4IZ4ef1OdpJ2hw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/checkmark-hand-drawn-outline.svg') }}">
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+  <script type="text/javascript">
+    google.charts.load('current', {'packages':['gauge']});
+    google.charts.setOnLoadCallback(drawChart);
+
+    function drawChart() {
+      var data = google.visualization.arrayToDataTable([
+        ['Label', 'Value'],
+        ['Score', {{ complexity_score }}] // Replace with the actual form score
+      ]);
+
+      var options = {
+        width: 150, height: 150,
+        redFrom: {{ metric_means["complexity score"] }}, redTo: 100, // Change according to the median score
+        yellowFrom: 9, yellowTo: {{ metric_means["complexity score"] + metric_stddev["complexity score"] }}, // Change according to the desired 'good' score range
+        greenFrom: 0, greenTo: {{ metric_means["complexity score"] - metric_stddev["complexity score"] }},
+        minorTicks: 5,
+        max: {{ metric_means["complexity score"] + 2 * metric_stddev["complexity score"] }}
+      };
+
+      var chart = new google.visualization.Gauge(document.getElementById('gauge_chart'));
+      chart.draw(data, options);
+    }
+  </script>
+
+</head>
+<body>
+
+  <!-- Header section -->
+  <section class="header-section">
+    <div class="header-text">
+      <h1>PDF Statistics</h1>
+      <h2 class="text-break">{{ title }}</h2>
+      <p>
+        <a class="btn btn-primary" href="/download/{{ file_hash }}" role="button">Download the file</a>
+
+        <a class="btn btn-primary" href="/" role="button">Upload a new PDF</a>
+      </p>
+    </div>
+  </section>
+  
+ 
+      <section class="pdf-statistics-section">
+        <div class="container">
+          <div class="row">
+            <div class="col-md-12 text-center">
+              <h2>Overall Score</h2>
+              <div class="d-flex justify-content-center">
+                <div id="gauge_chart" class="mx-auto"></div>
+              </div>
+              <p>The overall score is a weighted composite of the individual scores below. Higher scores are more complex. The average form scores about {{ metric_means["complexity score"] | int }}.</p>
+            </div>
+          </div>
+          <div class="row"> <!-- Begin time to answer -->
+            <div class="col-md-12 text-center">
+              <div class="container">
+                <h2 class="text-center mt-5 mb-4">Estimated Form Completion Time
+                  <a href="#time-to-answer-info" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="time-to-answer-info"><i class="fas fa-plus"></i></a>
+                </h2>
+                <div class="collapse" id="time-to-answer-info">
+                  <p>
+                    We estimate time to answer by considering field length, number of fields,
+                    the classification of the expected answer type for each field into one of slot-in,
+                    gathered, third-party or "created". See <a href="https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/complexity/complexity#how-we-created-our-score">How we created our score</a>.
+                  </p>
+                </div>
+                
+                <div class="circle-container">
+                  {% for num in range(floor(stats.get("time to answer")[0]/60)) %}
+                    {% if loop.last %}
+                      <div class="circle">
+                        <svg viewBox="0 0 36 36">
+                          <circle cx="18" cy="18" r="15.91549430918954" fill="transparent" stroke="#007bff" stroke-width="4"></circle>
+                        </svg>
+                        <span class="circle-label">{{ loop.index }}h</span>
+                      </div>
+                    {% else %}
+                      <!-- Full circle for each hour -->
+                      <div class="circle">
+                        <svg viewBox="0 0 36 36">
+                          <circle cx="18" cy="18" r="15.91549430918954" fill="transparent" stroke="#007bff" stroke-width="4"></circle>
+                        </svg>
+                        <span class="circle-label">&nbsp;</span>
+                      </div>
+                    {% endif %}
+                  {% endfor %}
+                  {% if stats.get("time to answer")[0] % 60 > 3 %}
+                  <!-- Partial circle for minutes -->
+                  <div class="circle">
+                    <svg viewBox="0 0 36 36">
+                      <circle cx="18" cy="18" r="15.91549430918954" fill="transparent" stroke="#007bff" stroke-width="4" stroke-dasharray="{{ stats.get("time to answer")[0] % 60 * 1.67 }}, 100" stroke-dashoffset="0" transform="rotate(-90 18 18)"></circle>
+                    </svg>
+                    <span class="circle-label">{{ 5 * round((stats.get("time to answer")[0] % 60) / 5) | int }}m</span>
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+            
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-4">
+            {{ percent_widget("difficult-words", "Percentage of Difficult Words", "We compare the vocabulary of this form to the 4000 most common English language words. (We use the Dale-Chall wordlist).", float(stats.get("difficult word percent")), metric_means["difficult word percent"], metric_stddev["difficult word percent"]) }}
+            </div>
+
+            <div class="col-md-4">
+            {{ score_position_widget("readability-info","Reading Grade Level","Reading Grade Level is an average of several scores, including Flesch-Kinkaid, Gunning-Fogg and Dale-Chall. Grade 8 means an 8th grader can read and understand most of the text. Note: this statistic is less accurate on forms than on longer narrative text but high grade level typically means a problem in your form.", stats.get("reading grade level"), metric_means["reading grade level"],metric_stddev["reading grade level"]) }}
+            </div>
+
+            <div class="col-md-4">
+              <div class="mb-3">
+              {{ percent_widget("passive-voice", "Percent Passive Voice", "We measure percentage of passive voice with <a href='https://pypi.org/project/PassivePy/'>PassivePy</a>. Passive voice is harder to read than the active voice.", passive_percent, metric_means["number of passive voice sentences"]/metric_means["number of sentences"], metric_stddev["number of passive voice sentences"]/metric_means["number of sentences"])}}
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="mb-3">
+                {{ score_position_widget("citation", "Number of legal citations", 'We recommend leaving citations out of your court form. We measure citations with <a href="https://free.law/projects/eyecite">EyeCite</a>, which often does not capture short form citations to state statutes.', stats.get("citation count"), metric_means["citation count"], metric_stddev["citation count"]) }}
+              </div>
+            </div>
+            
+            <div class="col-md-4">
+              {{ score_position_widget("fields", "Number of fields", "", stats.get("total fields"), metric_means["total fields"], metric_stddev["total fields"]) }}
+            </div>
+
+            <div class="col-md-4">
+              {{ score_position_widget("pages", "Number of pages", "", stats.get("pages"), metric_means["pages"], metric_stddev["pages"]) }}
+            </div>
+
+            <div class="col-md-4">
+              {{ score_position_widget("fields-per-page", "Fields per page", "", stats.get("avg fields per page"), metric_means["avg fields per page"], metric_stddev["avg fields per page"]) }}
+            </div>
+
+            <div class="col-md-4">
+              {{ score_position_widget("word-count", "Total word count", 'Users <a href="https://www.nngroup.com/articles/how-little-do-users-read/">read as little as 20% of the content</a> on a longer page. Try to keep word count around 100 words.', word_count, 110, 30) }}
+            </div>
+
+            <div class="col-md-4">
+              {{ score_position_widget("sentence-count", "Sentences per page", "", stats.get("sentences per page"), metric_means["sentences per page"], metric_stddev["sentences per page"])}}
+            </div>
+
+            <div class="col-md-4">
+              {{ percent_widget("slot-in", "Slot-in percent", '"Slot-in" fields can be answered with information the litigant knows well. An example is the litigant\'s name or address.', stats.get("slotin percent"), 70, 20) }}
+            </div>
+            <div class="col-md-4">
+              {{ percent_widget("gathered", "Gathered percent", '"Gathered" fields can be answered with information the litigant can read on a nearby piece of paper or lookup quickly. An example is the litigant\'s case number.', stats.get("gathered percent"), 10, 20) }}
+            </div>
+            <div class="col-md-4">
+              {{ percent_widget("third-party", "Third party percent", '"Third party" fields can be answered only by asking someone else for the information.', stats.get("third party percent"), 10, 20) }}
+            </div>
+            <div class="col-md-4">
+              {{ percent_widget("created", "Created percent", '"Created" fields require the litigant to apply a rule to their own facts, recall a large number of facts and put them into a narrative, or otherwise create a new answer.', stats.get("created percent"), 10, 20) }}
+            </div>
+
+          </div>
+        </div>
+      </section>
+     
+      <section class="pdf-suggestions-section">
+        <h2 class="pdf-section-heading">Suggestions</h2>
+        <ul>
+          <li>Use shorter sentences to improve readability</li>
+          <li>Avoid using passive voice where possible</li>
+          <li>Consider using simpler words to improve clarity</li>
+          <li>Break up longer paragraphs into shorter ones</li>
+        </ul>
+      </section>     
+
+      <footer class="bg-light py-3">
+        <div class="container">
+          <div class="row">
+            <div class="col-md-12 text-center">
+              <p>
+                RateMyPDF is a project of <a href="https://law.suffolk.edu">Suffolk University Law School</a>'s <a href="https://suffolklitlab.org">Legal Innovation and Technology Lab</a>.
+              </p>
+              <p>
+                <a href="https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/complexity/complexity">About our score</a>
+                <a href="https://suffolklitlab.org/docassemble-AssemblyLine-documentation/">Assembly Line</a>
+                <a href="https://suffolklitlab.org">LIT Lab</a>
+                <a href="https://suffolklitlab.org/form-explorer/">Form Explorer</a>
+              </p>
+            </div>
+          </div>
+        </div>
+      </footer>      
+
+            <!-- Bootstrap 5 JavaScript -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
