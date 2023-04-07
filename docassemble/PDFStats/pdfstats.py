@@ -24,26 +24,26 @@ from werkzeug.utils import secure_filename
 import formfyxer
 from formfyxer import lit_explorer
 
-try:
-    from docassemble.webapp.app_object import csrf
-    from docassemble.base.util import get_config, path_and_mimetype
+#try:
+    #from docassemble.webapp.app_object import csrf
+    #from docassemble.base.util import get_config, path_and_mimetype
 
-    INSIDE_DOCASSEMBLE: bool = True
-except:
-    INSIDE_DOCASSEMBLE = False
-    csrf = type("", (), {})
-    # No-op decorator (csrf.exempt is only required inside Docassemble)
-    csrf.exempt = lambda func: func
+    #INSIDE_DOCASSEMBLE: bool = True
+#except:
+INSIDE_DOCASSEMBLE = False
+csrf = type("", (), {})
+# No-op decorator (csrf.exempt is only required inside Docassemble)
+csrf.exempt = lambda func: func
 
-    def get_config(var):
-        return current_app.config.get(var.replace(" ", "_").upper())
+def get_config(var):
+    return current_app.config.get(var.replace(" ", "_").upper())
 
-    import secrets
+import secrets
 
-    # This generates a unique secret key every time Flask restarts
-    # Maybe that will do something weird in the future but for now we're
-    # only using this for the `flash()` function
-    current_app.config.update(SECRET_KEY=secrets.token_hex())
+# This generates a unique secret key every time Flask restarts
+# # Maybe that will do something weird in the future but for now we're
+# only using this for the `flash()` function
+current_app.config.update(SECRET_KEY=secrets.token_hex())
 
 bp = Blueprint("pdfstats", __name__, url_prefix="/pdfstats")
 
@@ -265,8 +265,9 @@ def view_stats(file_hash):
 
 
 try:
-    from docassemble.webapp.app_object import app
+    #from docassemble.webapp.app_object import app
 
-    app.register_blueprint(bp)
+    #app.register_blueprint(bp)
+    pass
 except:
     pass

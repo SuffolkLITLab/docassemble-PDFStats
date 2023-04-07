@@ -11,6 +11,6 @@ with app.app_context():
 def hello():
     return redirect(url_for("pdfstats.upload_file"))
 
-if __name__ == "main__":
+if __name__ == "__main__":
     # Only for debugging while developing
-    app.run(host='0.0.0.0', debug=True, port=80)
+    app.run(host='0.0.0.0', debug=True, port=8000)
