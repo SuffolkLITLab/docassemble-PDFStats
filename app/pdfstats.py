@@ -27,9 +27,6 @@ from formfyxer import lit_explorer
 
 INSIDE_DOCASSEMBLE = False
 
-def get_config(var):
-    return current_app.config.get(var.replace(" ", "_").upper())
-
 import secrets
 
 # This generates a unique secret key every time Flask restarts
@@ -124,14 +121,13 @@ def upload_file():
             full_path = os.path.join(to_path, filename)
             with open(full_path, "wb") as write_file:
                 write_file.write(file_content)
-            current_app.logger.info(f"~~~~~~~~~~~~~~~Tools token is {get_config('tools token')}")
             stats = formfyxer.parse_form(
                 full_path,
                 normalize=True,
                 debug=True,
-                openai_creds=get_config("open ai"),
-                spot_token=get_config("spot token"),
-                tools_token=get_config("tools token"),
+                openai_creds=current_app.config.get("OPEN_AI"),
+                spot_token=current_app.config.get("SPOT_TOKEN"),
+                tools_token=current_app.config.get("TOOLS_TOKEN"),
             )
             with open(os.path.join(to_path, "stats.json"), "w") as stats_file:
                 stats_file.write(json.dumps(stats))
