@@ -11,6 +11,3 @@ RUN pip install git+https://github.com/SuffolkLITLab/FormFyxer.git
 WORKDIR /
 
 COPY ./app /app
-COPY ./setup.py /setup.py
-
-RUN pip install --editable .
