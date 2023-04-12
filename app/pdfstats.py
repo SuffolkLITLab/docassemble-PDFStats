@@ -9,7 +9,6 @@ import textstat
 import pandas
 from flask import (
     Blueprint,
-    flash,
     render_template_string,
     request,
     redirect,
@@ -17,8 +16,6 @@ from flask import (
     current_app,
     send_from_directory,
 )
-from werkzeug.local import LocalProxy
-logger = LocalProxy(lambda: current_app.logger)
 
 from werkzeug.utils import secure_filename
 
@@ -26,11 +23,6 @@ import formfyxer
 from formfyxer import lit_explorer
 
 import secrets
-
-# This generates a unique secret key every time Flask restarts
-# Maybe that will do something weird in the future but for now we're
-# only using this for the `flash()` function
-current_app.config.update(SECRET_KEY=secrets.token_hex())
 
 bp = Blueprint("pdfstats", __name__, url_prefix="/")
 
@@ -86,19 +78,20 @@ def get_template_from_static_dir(template_name: str) -> str:
         template_str = f.read()
     return template_str
 
+@bp.route("/pdfstats", methods=["GET","POST"])
+def redirect_pdfstats():
+    return redirect("/")
 
 @bp.route("/", methods=["GET", "POST"])
 def upload_file():
     if request.method == "POST":
         # check if the post request has the file part
         if "file" not in request.files:
-            flash("No file part")
             return redirect(request.url)
         file = request.files["file"]
         # If the user does not select a file, the browser submits an
         # empty file without a filename.
         if file.filename == "":
-            flash("No selected file")
             return redirect(request.url)
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)

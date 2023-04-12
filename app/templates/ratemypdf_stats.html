@@ -78,16 +78,16 @@
     function drawChart() {
       var data = google.visualization.arrayToDataTable([
         ['Label', 'Value'],
-        ['Score', {{ complexity_score }}] // Replace with the actual form score
+        ['Score', {{ round(complexity_score,1) }}] // Replace with the actual form score
       ]);
 
       var options = {
         width: 150, height: 150,
-        redFrom: {{ metric_means["complexity score"] }}, redTo: 100, // Change according to the median score
-        yellowFrom: 9, yellowTo: {{ metric_means["complexity score"] + metric_stddev["complexity score"] }}, // Change according to the desired 'good' score range
-        greenFrom: 0, greenTo: {{ metric_means["complexity score"] - metric_stddev["complexity score"] }},
+        redFrom: {{ round(metric_means["complexity score"], 1) }}, redTo: 100, // Change according to the median score
+        yellowFrom: 9, yellowTo: {{ round(metric_means["complexity score"] + metric_stddev["complexity score"], 1) }}, // Change according to the desired 'good' score range
+        greenFrom: 0, greenTo: {{ round(metric_means["complexity score"] - metric_stddev["complexity score"], 1) }},
         minorTicks: 5,
-        max: {{ metric_means["complexity score"] + 2 * metric_stddev["complexity score"] }}
+        max: {{ round(metric_means["complexity score"] + 2 * metric_stddev["complexity score"],1) }}
       };
 
       var chart = new google.visualization.Gauge(document.getElementById('gauge_chart'));
