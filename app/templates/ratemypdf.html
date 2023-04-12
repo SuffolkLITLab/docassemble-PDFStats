@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Rate My PDF</title>
+  <!-- Bootstrap 5 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/ratemypdf.css') }}">
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/checkmark-hand-drawn-outline.svg') }}">
+</head>
+<body>
+    <section class="header-section">
+        <div class="header-text">
+          <h1>Rate My PDF</h1>
+
+          <form method=post enctype=multipart/form-data>
+
+            <div>
+                <label for="file" class="form-label">PDF file</label>
+                <input class="form-control form-control-md" id="file" name="file" type="file">
+            </div>    
+        
+                <button type="submit" class="btn btn-primary mb-3 mt-3">Upload file</button>
+          </form>
+
+        </div>
+        <div class="curved-line"></div>
+      </section>
+      <div class="complementary-color"></div>
+      <div class="checkmark-image"></div>
+  </div>
+    <div class="row mt-5">
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-body text-center">
+            <h5 class="card-title">Improve Your Court Forms</h5>
+            <p class="card-text">Get insights into how to make your PDF court form 
+                simpler, more accessible, and more usable by self represented litigants.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-body text-center">
+            <h5 class="card-title">Free and Easy</h5>
+            <p class="card-text">Upload a PDF (with form fields) and let our tool do the rest. There is no cost to you.</p>
+
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-body text-center">
+            <h5 class="card-title">Expert Validated</h5>
+            <p class="card-text">We talked to dozens of court and usability experts and gathered 24,000 court forms from across the country to build our recommendations.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <footer class="bg-light py-3">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12 text-center">
+          <p>
+            RateMyPDF is a project of <a href="https://law.suffolk.edu">Suffolk University Law School</a>'s <a href="https://suffolklitlab.org">Legal Innovation and Technology Lab</a>.
+          </p>
+          <p>
+            How the score works: RateMyPDF measures key metrics like readability, length and number of fields, sentence structure,
+            and density of fields on the page to compare your form to forms from around the country and to calculate a score. AI-powered tools recommend easy wins
+            that can help you improve your form for future litigants.
+          </p>
+          <p>
+            <a href="https://suffolklitlab.org/docassemble-AssemblyLine-documentation/docs/complexity/complexity">About our score</a>
+            <a href="https://suffolklitlab.org/docassemble-AssemblyLine-documentation/">Assembly Line</a>
+            <a href="https://suffolklitlab.org">LIT Lab</a>
+            <a href="https://suffolklitlab.org/form-explorer/">Form Explorer</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </footer>
+    
+
+  <!-- Bootstrap 5 JavaScript -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,17 +1,14 @@
-# pre-load
-
 import os
 import re
 import json
 from typing import Union, List
-import uuid
 from hashlib import sha256
+import math
 
 import textstat
 import pandas
 from flask import (
     Blueprint,
-    flash,
     render_template_string,
     request,
     redirect,
@@ -19,33 +16,15 @@ from flask import (
     current_app,
     send_from_directory,
 )
+
 from werkzeug.utils import secure_filename
 
 import formfyxer
 from formfyxer import lit_explorer
 
-try:
-    from docassemble.webapp.app_object import csrf
-    from docassemble.base.util import get_config, path_and_mimetype
+import secrets
 
-    INSIDE_DOCASSEMBLE: bool = True
-except:
-    INSIDE_DOCASSEMBLE = False
-    csrf = type("", (), {})
-    # No-op decorator (csrf.exempt is only required inside Docassemble)
-    csrf.exempt = lambda func: func
-
-    def get_config(var):
-        return current_app.config.get(var.replace(" ", "_").upper())
-
-    import secrets
-
-    # This generates a unique secret key every time Flask restarts
-    # Maybe that will do something weird in the future but for now we're
-    # only using this for the `flash()` function
-    current_app.config.update(SECRET_KEY=secrets.token_hex())
-
-bp = Blueprint("pdfstats", __name__, url_prefix="/pdfstats")
+bp = Blueprint("pdfstats", __name__, url_prefix="/")
 
 SITE_ROOT = os.path.realpath(os.path.dirname(__file__))
 UPLOAD_FOLDER = "/tmp"
@@ -94,28 +73,25 @@ def highlight_text(
 
 
 def get_template_from_static_dir(template_name: str) -> str:
-    if INSIDE_DOCASSEMBLE:
-        path = path_and_mimetype(f"data/static/{template_name}")[0]
-    else:
-        path = os.path.join(SITE_ROOT, "data/static/", template_name)
+    path = os.path.join(SITE_ROOT, "templates/", template_name)
     with open(path) as f:
         template_str = f.read()
     return template_str
 
+@bp.route("/pdfstats", methods=["GET","POST"])
+def redirect_pdfstats():
+    return redirect("/")
 
 @bp.route("/", methods=["GET", "POST"])
-@csrf.exempt
 def upload_file():
     if request.method == "POST":
         # check if the post request has the file part
         if "file" not in request.files:
-            flash("No file part")
             return redirect(request.url)
         file = request.files["file"]
         # If the user does not select a file, the browser submits an
         # empty file without a filename.
         if file.filename == "":
-            flash("No selected file")
             return redirect(request.url)
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
@@ -140,13 +116,14 @@ def upload_file():
                 full_path,
                 normalize=True,
                 debug=True,
-                openai_creds=get_config("open ai"),
-                spot_token=get_config("spot token"),
+                openai_creds=current_app.config.get("OPEN_AI"),
+                spot_token=current_app.config.get("SPOT_TOKEN"),
+                tools_token=current_app.config.get("TOOLS_TOKEN"),
             )
             with open(os.path.join(to_path, "stats.json"), "w") as stats_file:
                 stats_file.write(json.dumps(stats))
             return redirect(url_for("pdfstats.view_stats", file_hash=intermediate_dir))
-    return render_template_string(get_template_from_static_dir("upload_file.html"))
+    return render_template_string(get_template_from_static_dir("ratemypdf.html"))
 
 
 def get_pdf_from_dir(file_hash):
@@ -214,20 +191,9 @@ def view_stats(file_hash):
         "citation count": 4.122761536011,
     }
 
-    def get_class(k, val=None):
-        if val is None:
-            val = stats.get(k, metric_means[k])
-
-        if val < metric_means[k] - metric_stddev[k]:
-            return "data-good"
-        if val < metric_means[k] + metric_stddev[k]:
-            return ""
-        if val < metric_means[k] + 2 * metric_stddev[k]:
-            return "data-warn"
-        return "data-bad"
-
-    def get_data(k):
-        return f'<font size="1">Mean: {metric_means[k]:.2f}, Std. {metric_stddev[k]:.2f}</font>'
+    def percent_of_2_stddev(score, mean, stddev):
+        max = mean + (2 * stddev)
+        return score / max * 100
 
     word_count = len(stats.get("text").split(" "))
     if stats.get("number of passive voice sentences") and stats.get(
@@ -236,7 +202,6 @@ def view_stats(file_hash):
         passive_percent = (
             int(stats["number of passive voice sentences"])
             / stats["number of sentences"]
-            * 100
         )
     else:
         passive_percent = 0
@@ -249,24 +214,20 @@ def view_stats(file_hash):
         "word_count": word_count,
         "word_count_per_page": word_count / float(stats.get("pages") or 1.0),
         "difficult_word_count": textstat.difficult_words(stats.get("text")),
-        "get_class": get_class,
-        "get_data": get_data,
+        "metric_means": metric_means,
+        "metric_stddev": metric_stddev,
+        "percent_of_2_stddev": percent_of_2_stddev,
         "highlight_text": highlight_text,
         "minutes_to_hours": minutes_to_hours,
         "file_hash": file_hash,
         "int": int,
+        "float": float,
+        "floor": math.floor,
+        "round": round,
         "pandas": pandas,
         "lit_explorer": lit_explorer,
     }
     return render_template_string(
-        get_template_from_static_dir("view_stats.html"),
+        get_template_from_static_dir("ratemypdf_stats.html"),
         **vars,
     )
-
-
-try:
-    from docassemble.webapp.app_object import app
-
-    app.register_blueprint(bp)
-except:
-    pass
