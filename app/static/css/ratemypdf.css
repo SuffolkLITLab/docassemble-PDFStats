@@ -356,3 +356,23 @@ font-weight: bold;
   font-size: 1rem;
   color: #555;
 }
+
+
+.bar {
+  height: 30px;
+  display: flex;
+}
+.bar-segment {
+  height: 100%;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  margin-right: 10px;
+}
+.legend-color {
+  width: 20px;
+  height: 20px;
+  margin-right: 5px;
+}
