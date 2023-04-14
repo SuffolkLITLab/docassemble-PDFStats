@@ -320,12 +320,7 @@
                 <ul>
                 {% for sentence in stats.get("passive sentences", []) %}
                 <li>
-                  {{ sentence[0]  }}
-                  <ul>
-                    {% for frag in sentence[1] %}
-                    <li>{{ frag }}</li>
-                    {% endfor %}
-                  </ul>
+                  {{ highlight_text(sentence[0], sentence[1])  }}
                 </li>
                 {% endfor %}
                 </ul>
