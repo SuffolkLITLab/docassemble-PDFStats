@@ -67,7 +67,7 @@ def highlight_text(text: str, ranges: List[Tuple[int, int]], class_name="highlig
 
     for start, end in sorted(ranges):
         output.append(text[prev_end:start])
-        output.append('<span class="{}">'.format(class_name))
+        output.append(f'<span class="{class_name}">')
         output.append(text[start:end])
         output.append("</span>")
         prev_end = end
