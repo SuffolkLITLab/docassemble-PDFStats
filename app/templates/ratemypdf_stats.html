@@ -232,10 +232,9 @@
   </div>
 </div>
 
-          </div>
 <!-- -->
 <div class="container">
-  <h2 class="mt-5 mb-4">Field classification</h1>
+  <h2 class="mt-5 mb-4">Field classification</h2>
 
   <!-- Stacked bar chart -->
   <div class="bar w-50">
@@ -266,7 +265,6 @@
   </div>
 </div>
 
-        </div>
       </section>
      
       <section class="pdf-suggestions-section">
@@ -337,9 +335,8 @@
             </h2>
             <div id="collapse-difficult-words" class="accordion-collapse collapse" aria-labelledby="heading-difficult-words" data-bs-parent="#suggestionsAccordion">
               <div class="accordion-body">
-                We refer to [plainlanguage.gov](https://www.plainlanguage.gov/guidelines/words/)'s list of common
-                complex words and simple replacements. Apply judgement and read the words in context to make sure the replacements
-                still make sense.
+                Words on this list are not listed in the Dale-Chall wordlist of the most common
+                English language words.
                 <ul>
                 {% for word in stats.get("difficult words", []) %}
                 <li>
@@ -360,12 +357,17 @@
             </h2>
             <div id="collapse-plain-lang-suggestions" class="accordion-collapse collapse" aria-labelledby="heading-plain-lang-suggestions" data-bs-parent="#suggestionsAccordion">
               <div class="accordion-body">
+                We refer to <a href="https://www.plainlanguage.gov/guidelines/words/">plainlanguage.gov</a>'s list of common
+                complex words and simple replacements. Apply judgement and read the words in context to make sure the replacements
+                still make sense.
                 <table class="table">
-                  <thead>
+                  <!-- <thead>
                     <tr>
                       <th scope="col">Original sentence</th>
                       <th scope="col">Revised sentence</th>
-                    </tr>                
+                    </tr>
+                  </thead> -->
+           
                 {% for suggestion in stats.get("plain language suggestions", []) %}
                 <tr>
                   <td>
@@ -395,7 +397,8 @@
                     <tr>
                       <th scope="col">Original sentence</th>
                       <th scope="col">Revised sentence</th>
-                    </tr>                
+                    </tr>
+                    </thead>               
                 {% for suggestion in stats.get("neutral gender suggestions", []) %}
                 <tr>
                   <td>
