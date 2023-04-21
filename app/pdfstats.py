@@ -61,7 +61,7 @@ def minutes_to_hours(minutes: Union[float, int]) -> str:
         return f"{minutes} minute{'s' if minutes > 1 else ''}"
 
 
-def highlight_text(text: str, ranges: List[Tuple[int,int]], class_name="highlight"):
+def highlight_text(text: str, ranges: List[Tuple[int, int]], class_name="highlight"):
     output = []
     prev_end = 0
 
@@ -69,11 +69,11 @@ def highlight_text(text: str, ranges: List[Tuple[int,int]], class_name="highligh
         output.append(text[prev_end:start])
         output.append('<span class="{}">'.format(class_name))
         output.append(text[start:end])
-        output.append('</span>')
+        output.append("</span>")
         prev_end = end
 
     output.append(text[prev_end:])
-    return ''.join(output)
+    return "".join(output)
 
 
 def get_template_from_static_dir(template_name: str) -> str:
@@ -82,9 +82,11 @@ def get_template_from_static_dir(template_name: str) -> str:
         template_str = f.read()
     return template_str
 
-@bp.route("/pdfstats", methods=["GET","POST"])
+
+@bp.route("/pdfstats", methods=["GET", "POST"])
 def redirect_pdfstats():
     return redirect("/")
+
 
 @bp.route("/", methods=["GET", "POST"])
 def upload_file():
