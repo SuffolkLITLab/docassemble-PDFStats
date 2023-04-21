@@ -116,7 +116,7 @@
         <div class="container">
           <div class="row">
             <div class="col-md-12 text-center">
-              <h2>Complexity Index</h2>
+              <h2>Complexity index</h2>
               <div class="d-flex justify-content-center">
                 <div id="gauge_chart" class="mx-auto"></div>
               </div>
@@ -127,7 +127,7 @@
             
             <div class="col-md-12 text-center">
               <div class="container">
-                <h2 class="text-center mt-5 mb-4">Estimated Form Completion Time
+                <h2 class="text-center mt-5 mb-4">Estimated form completion time
                   <a href="#time-to-answer-info" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="time-to-answer-info"><i class="fas fa-plus"></i></a>
                 </h2>
                 <div class="collapse" id="time-to-answer-info">
@@ -174,11 +174,11 @@
           <div class="row">
             <h2 class="text-center mt-4">Detailed statistics</h2>
             <div class="col-md-6">
-              {{ percent_widget("difficult-words", "Percentage of Difficult Words", "We compare the vocabulary of this form to the 4000 most common English language words. (We use the Dale-Chall wordlist).", float(stats.get("difficult word percent")), metric_means["difficult word percent"], metric_stddev["difficult word percent"]) }}
+              {{ percent_widget("difficult-words", "Percentage of difficult words", "We compare the vocabulary of this form to the 4000 most common English language words. (We use the Dale-Chall wordlist).", float(stats.get("difficult word percent")), metric_means["difficult word percent"], metric_stddev["difficult word percent"]) }}
               </div>
 
               <div class="col-md-6">
-                {{ percent_widget("passive-voice", "Percent Passive Voice", "We measure percentage of passive voice with <a href='https://pypi.org/project/PassivePy/'>PassivePy</a>. Passive voice is harder to read than the active voice.", passive_percent, metric_means["number of passive voice sentences"]/metric_means["number of sentences"], metric_stddev["number of passive voice sentences"]/metric_means["number of sentences"])}}
+                {{ percent_widget("passive-voice", "Percent passive voice", "We measure percentage of passive voice with <a href='https://pypi.org/project/PassivePy/'>PassivePy</a>. Passive voice is harder to read than the active voice.", passive_percent, metric_means["number of passive voice sentences"]/metric_means["number of sentences"], metric_stddev["number of passive voice sentences"]/metric_means["number of sentences"])}}
               </div>
           </div>
 
@@ -186,7 +186,7 @@
 
 
             <div class="col-md-4">
-            {{ score_position_widget("readability-info","Reading Grade Level","Reading Grade Level is an average of several scores, including Flesch-Kinkaid, Gunning-Fogg and Dale-Chall. Grade 8 means an 8th grader can read and understand most of the text. Note: this statistic is less accurate on forms than on longer narrative text but high grade level typically means a problem in your form.", stats.get("reading grade level"), metric_means["reading grade level"],metric_stddev["reading grade level"]) }}
+            {{ score_position_widget("readability-info","Reading grade level","Reading Grade Level is an average of several scores, including Flesch-Kinkaid, Gunning-Fogg and Dale-Chall. Grade 8 means an 8th grader can read and understand most of the text. Note: this statistic is less accurate on forms than on longer narrative text but high grade level typically means a problem in your form.", stats.get("reading grade level"), metric_means["reading grade level"],metric_stddev["reading grade level"]) }}
             </div>
 
 
