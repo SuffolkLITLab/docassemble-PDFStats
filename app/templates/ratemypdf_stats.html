@@ -360,24 +360,25 @@
                 We refer to <a href="https://www.plainlanguage.gov/guidelines/words/">plainlanguage.gov</a>'s list of common
                 complex words and simple replacements. Apply judgement and read the words in context to make sure the replacements
                 still make sense.
+                <div class="text-break">
                 <table class="table">
-                  <!-- <thead>
                     <tr>
                       <th scope="col">Original sentence</th>
                       <th scope="col">Revised sentence</th>
                     </tr>
-                  </thead> -->
-           
-                {% for suggestion in stats.get("plain language suggestions", []) %}
-                <tr>
-                  <td>
-                    {{ suggestion[0] | safe }}
-                  </td>
-                  <td>{{ highlight_text(suggestion[1], suggestion[2]) | safe  }}</td>
-                </tr>
-                {% endfor %}
-                
+                  </thead>
+                  <tbody>
+                  {% for suggestion in stats.get("plain language suggestions", []) %}
+                  <tr>
+                    <td>
+                      {{ suggestion[0] | safe }}
+                    </td>
+                    <td>{{ highlight_text(suggestion[1], suggestion[2]) | safe  }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>             
                 </table>
+                </div>
               </div>
             </div>
           </div>
@@ -391,7 +392,7 @@
             </h2>
             <div id="collapse-neutral-gender" class="accordion-collapse collapse" aria-labelledby="heading-neutral-gender" data-bs-parent="#suggestionsAccordion">
               <div class="accordion-body">
-
+                <div class="text-break">
                 <table class="table">
                   <thead>
                     <tr>
@@ -409,6 +410,7 @@
                 {% endfor %}
                 
                 </table>
+                </div>
               </div>
             </div>
           </div>
