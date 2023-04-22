@@ -1,7 +1,7 @@
 import os
 import re
 import json
-from typing import Union, List
+from typing import Tuple, Union, List
 from hashlib import sha256
 import math
 
@@ -61,15 +61,19 @@ def minutes_to_hours(minutes: Union[float, int]) -> str:
         return f"{minutes} minute{'s' if minutes > 1 else ''}"
 
 
-def highlight_text(
-    sentence: str, fragments: List[str], highlight_class: str = "highlight"
-) -> str:
-    highlighted = sentence
-    for frag in fragments:
-        highlighted = re.sub(
-            re.escape(frag), re.escape(f'<span class="{ highlight_class }">{frag}</span>'), sentence
-        )
-    return highlighted
+def highlight_text(text: str, ranges: List[Tuple[int, int]], class_name="highlight"):
+    output = []
+    prev_end = 0
+
+    for start, end in sorted(ranges):
+        output.append(text[prev_end:start])
+        output.append(f'<span class="{class_name}">')
+        output.append(text[start:end])
+        output.append("</span>")
+        prev_end = end
+
+    output.append(text[prev_end:])
+    return "".join(output)
 
 
 def get_template_from_static_dir(template_name: str) -> str:
@@ -78,9 +82,11 @@ def get_template_from_static_dir(template_name: str) -> str:
         template_str = f.read()
     return template_str
 
-@bp.route("/pdfstats", methods=["GET","POST"])
+
+@bp.route("/pdfstats", methods=["GET", "POST"])
 def redirect_pdfstats():
     return redirect("/")
+
 
 @bp.route("/", methods=["GET", "POST"])
 def upload_file():
@@ -158,7 +164,8 @@ def download_file(file_hash):
 @bp.route("/view/<file_hash>")
 def view_stats(file_hash):
     if not (file_hash and valid_hash(file_hash)):
-        raise Exception("Not a valid filename")
+        # allow to upload file again
+        return redirect("/")
     to_dir = os.path.join(current_app.config["PDFSTAT_UPLOAD_FOLDER"], file_hash)
     with open(os.path.join(to_dir, "stats.json")) as stats_file:
         stats = json.loads(stats_file.read())

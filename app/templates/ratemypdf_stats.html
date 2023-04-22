@@ -78,7 +78,7 @@
     function drawChart() {
       var data = google.visualization.arrayToDataTable([
         ['Label', 'Value'],
-        ['Score', {{ round(complexity_score,1) }}] // Replace with the actual form score
+        ['', {{ round(complexity_score,1) }}] // Replace with the actual form score
       ]);
 
       var options = {
@@ -116,17 +116,18 @@
         <div class="container">
           <div class="row">
             <div class="col-md-12 text-center">
-              <h2>Overall Score</h2>
+              <h2>Complexity index</h2>
               <div class="d-flex justify-content-center">
                 <div id="gauge_chart" class="mx-auto"></div>
               </div>
-              <p>The overall score is a weighted composite of the individual scores below. Higher scores are more complex. The average form scores about {{ metric_means["complexity score"] | int }}.</p>
+              <p>The complexity index is a weighted composite of the individual scores below. Higher scores are more complex. The average form scores about {{ metric_means["complexity score"] | int }}.</p>
             </div>
           </div>
           <div class="row"> <!-- Begin time to answer -->
+            
             <div class="col-md-12 text-center">
               <div class="container">
-                <h2 class="text-center mt-5 mb-4">Estimated Form Completion Time
+                <h2 class="text-center mt-5 mb-4">Estimated form completion time
                   <a href="#time-to-answer-info" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="time-to-answer-info"><i class="fas fa-plus"></i></a>
                 </h2>
                 <div class="collapse" id="time-to-answer-info">
@@ -138,24 +139,15 @@
                 </div>
                 
                 <div class="circle-container">
-                  {% for num in range(floor(stats.get("time to answer")[0]/60)) %}
-                    {% if loop.last %}
-                      <div class="circle">
-                        <svg viewBox="0 0 36 36">
-                          <circle cx="18" cy="18" r="15.91549430918954" fill="transparent" stroke="#007bff" stroke-width="4"></circle>
-                        </svg>
-                        <span class="circle-label">{{ loop.index }}h</span>
-                      </div>
-                    {% else %}
+                  {% if floor(stats.get("time to answer")[0]/60) > 0 %}
                       <!-- Full circle for each hour -->
                       <div class="circle">
                         <svg viewBox="0 0 36 36">
                           <circle cx="18" cy="18" r="15.91549430918954" fill="transparent" stroke="#007bff" stroke-width="4"></circle>
                         </svg>
-                        <span class="circle-label">&nbsp;</span>
+                        <span class="circle-label">{{ floor(stats.get("time to answer")[0]/60) }}hr{% if floor(stats.get("time to answer")[0]/60) > 1 %}s{% endif %}</span>
                       </div>
-                    {% endif %}
-                  {% endfor %}
+                  {% endif %}
                   {% if stats.get("time to answer")[0] % 60 > 3 %}
                   <!-- Partial circle for minutes -->
                   <div class="circle">
@@ -171,24 +163,26 @@
             </div>
           </div>
           <div class="row">
-            <div class="col-md-4">
-            {{ percent_widget("difficult-words", "Percentage of Difficult Words", "We compare the vocabulary of this form to the 4000 most common English language words. (We use the Dale-Chall wordlist).", float(stats.get("difficult word percent")), metric_means["difficult word percent"], metric_stddev["difficult word percent"]) }}
-            </div>
-
-            <div class="col-md-4">
-            {{ score_position_widget("readability-info","Reading Grade Level","Reading Grade Level is an average of several scores, including Flesch-Kinkaid, Gunning-Fogg and Dale-Chall. Grade 8 means an 8th grader can read and understand most of the text. Note: this statistic is less accurate on forms than on longer narrative text but high grade level typically means a problem in your form.", stats.get("reading grade level"), metric_means["reading grade level"],metric_stddev["reading grade level"]) }}
-            </div>
-
-            <div class="col-md-4">
-              <div class="mb-3">
-              {{ percent_widget("passive-voice", "Percent Passive Voice", "We measure percentage of passive voice with <a href='https://pypi.org/project/PassivePy/'>PassivePy</a>. Passive voice is harder to read than the active voice.", passive_percent, metric_means["number of passive voice sentences"]/metric_means["number of sentences"], metric_stddev["number of passive voice sentences"]/metric_means["number of sentences"])}}
+            <h2 class="text-center mt-4">Detailed statistics</h2>
+            <div class="col-md-6">
+              {{ percent_widget("difficult-words", "Percentage of difficult words", "We compare the vocabulary of this form to the 4000 most common English language words. (We use the Dale-Chall wordlist).", float(stats.get("difficult word percent")), metric_means["difficult word percent"], metric_stddev["difficult word percent"]) }}
               </div>
-            </div>
+
+              <div class="col-md-6">
+                {{ percent_widget("passive-voice", "Percent passive voice", "We measure percentage of passive voice with <a href='https://pypi.org/project/PassivePy/'>PassivePy</a>. Passive voice is harder to read than the active voice.", passive_percent, metric_means["number of passive voice sentences"]/metric_means["number of sentences"], metric_stddev["number of passive voice sentences"]/metric_means["number of sentences"])}}
+              </div>
+          </div>
+
+          <div class="row">
+
 
             <div class="col-md-4">
-              <div class="mb-3">
+            {{ score_position_widget("readability-info","Reading grade level","Reading Grade Level is an average of several scores, including Flesch-Kinkaid, Gunning-Fogg and Dale-Chall. Grade 8 means an 8th grader can read and understand most of the text. Note: this statistic is less accurate on forms than on longer narrative text but high grade level typically means a problem in your form.", stats.get("reading grade level"), metric_means["reading grade level"],metric_stddev["reading grade level"]) }}
+            </div>
+
+
+            <div class="col-md-4">
                 {{ score_position_widget("citation", "Number of legal citations", 'We recommend leaving citations out of your court form. We measure citations with <a href="https://free.law/projects/eyecite">EyeCite</a>, which often does not capture short form citations to state statutes.', stats.get("citation count"), metric_means["citation count"], metric_stddev["citation count"]) }}
-              </div>
             </div>
             
             <div class="col-md-4">
@@ -204,28 +198,64 @@
             </div>
 
             <div class="col-md-4">
-              {{ score_position_widget("word-count", "Total word count", 'Users <a href="https://www.nngroup.com/articles/how-little-do-users-read/">read as little as 20% of the content</a> on a longer page. Try to keep word count around 100 words.', word_count, 110, 30) }}
+              {{ score_position_widget("word-count", "Words per page", 'Users <a href="https://www.nngroup.com/articles/how-little-do-users-read/">read as little as 20% of the content</a> on a longer page. Try to keep word count around 100 words.', word_count_per_page, 110, 30) }}
             </div>
 
             <div class="col-md-4">
               {{ score_position_widget("sentence-count", "Sentences per page", "", stats.get("sentences per page"), metric_means["sentences per page"], metric_stddev["sentences per page"])}}
             </div>
 
-            <div class="col-md-4">
-              {{ percent_widget("slot-in", "Slot-in percent", '"Slot-in" fields can be answered with information the litigant knows well. An example is the litigant\'s name or address.', stats.get("slotin percent"), 70, 20) }}
-            </div>
-            <div class="col-md-4">
-              {{ percent_widget("gathered", "Gathered percent", '"Gathered" fields can be answered with information the litigant can read on a nearby piece of paper or lookup quickly. An example is the litigant\'s case number.', stats.get("gathered percent"), 10, 20) }}
-            </div>
-            <div class="col-md-4">
-              {{ percent_widget("third-party", "Third party percent", '"Third party" fields can be answered only by asking someone else for the information.', stats.get("third party percent"), 10, 20) }}
-            </div>
-            <div class="col-md-4">
-              {{ percent_widget("created", "Created percent", '"Created" fields require the litigant to apply a rule to their own facts, recall a large number of facts and put them into a narrative, or otherwise create a new answer.', stats.get("created percent"), 10, 20) }}
-            </div>
-
           </div>
-        </div>
+  <!-- Legend -->
+  <div class="d-flex mt-3">
+    <div class="legend-item">
+      <div class="legend-color bg-success"></div>
+      <span>Green: 1 standard deviation below the mean</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color bg-warning"></div>
+      <span>Yellow: within 1 standard deviation of the mean</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color bg-danger"></div>
+      <span>Red: more than 1 standard deviation above the mean</span>
+    </div>
+  </div>
+</div>
+
+<!-- -->
+<div class="container">
+  <h2 class="mt-5 mb-4">Field classification</h2>
+
+  <!-- Stacked bar chart -->
+  <div class="bar w-50">
+    <div class="bar-segment bg-success" style="width: {{ stats.get('slotin percent', 0) * 100 }}%;"></div> <!-- Adjust width according to the percentage of the slotin stat -->
+    <div class="bar-segment bg-secondary" style="width: {{ stats.get('gathered percent', 0) * 100 }}%;"></div> <!-- Adjust width according to the percentage of the gathered stat -->
+    <div class="bar-segment bg-warning" style="width: {{ stats.get('third party percent', 0) * 100 }}%;"></div> <!-- Adjust width according to the percentage of the third-party stat -->
+    <div class="bar-segment bg-danger" style="width: {{ stats.get('created percent', 0) * 100 }}%;"></div> <!-- Adjust width according to the percentage of the created stat -->
+  </div>
+
+  <!-- Legend -->
+  <div class="d-flex mt-3">
+    <div class="legend-item">
+      <div class="legend-color bg-success"></div>
+      <span>Slot-in fields: {{ round(stats.get('slotin percent', 0) * 100, 1) }}%</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color bg-secondary"></div>
+      <span>Gathered fields: {{ round(stats.get('gathered percent', 0) * 100, 1) }}%</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color bg-warning"></div>
+      <span>Third-party fields: {{ round(stats.get('third party percent', 0) * 100,1) }}%</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color bg-danger"></div>
+      <span>Created fields: {{ round(stats.get('created percent', 0) * 100, 1) }}%</span>
+    </div>
+  </div>
+</div>
+
       </section>
      
       <section class="pdf-suggestions-section">
@@ -236,6 +266,168 @@
           <li>Consider using simpler words to improve clarity</li>
           <li>Break up longer paragraphs into shorter ones</li>
         </ul>
+
+        <div class="accordion" id="suggestionsAccordion">
+          {% if stats.get("suggested title") and stats["suggested title"].lower().strip() not in ["abortthisnow.", "apierror"]%}
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="heading-title">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-title" aria-expanded="false" aria-controls="collapse-title">
+                Suggested plain language title
+              </button>
+            </h2>
+            <div id="collapse-title" class="accordion-collapse collapse" aria-labelledby="heading-title" data-bs-parent="#suggestionsAccordion">
+              <div class="accordion-body">
+                {{ stats.get("suggested title") }}
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          {% if stats.get("description") and stats["description"].lower().strip() not in ["abortthisnow.", "apierror"] %}
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="heading-description">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-description" aria-expanded="false" aria-controls="collapse-description">
+                Suggested plain language description
+              </button>
+            </h2>
+            <div id="collapse-description" class="accordion-collapse collapse" aria-labelledby="heading-description" data-bs-parent="#suggestionsAccordion">
+              <div class="accordion-body">
+                {{ stats.get("description") }}
+              </div>
+            </div>
+          </div>
+          {% endif %}
+
+          {% if stats.get("passive sentences", []) %}
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="heading-passive-voice">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-passive-voice" aria-expanded="false" aria-controls="collapse-passive-voice">
+                Sentences with passive voice
+              </button>
+            </h2>
+            <div id="collapse-passive-voice" class="accordion-collapse collapse" aria-labelledby="heading-passive-voice" data-bs-parent="#suggestionsAccordion">
+              <div class="accordion-body">
+                <ul>
+                {% for sentence in stats.get("passive sentences", []) %}
+                <li>
+                  {{ highlight_text(sentence[0], sentence[1])  | safe }}
+                </li>
+                {% endfor %}
+                </ul>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          {% if stats.get("difficult words", []) %}
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="heading-difficult-words">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-difficult-words" aria-expanded="false" aria-controls="collapse-difficult-words">
+                Consider replacing difficult words
+              </button>
+            </h2>
+            <div id="collapse-difficult-words" class="accordion-collapse collapse" aria-labelledby="heading-difficult-words" data-bs-parent="#suggestionsAccordion">
+              <div class="accordion-body">
+                Words on this list are not listed in the Dale-Chall wordlist of the most common
+                English language words.
+                <ul>
+                {% for word in stats.get("difficult words", []) %}
+                <li>
+                  {{ word  }}
+                </li>
+                {% endfor %}
+                </ul>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          {% if stats.get("plain language suggestions") %}
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="heading-plain-lang-suggestions">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-plain-lang-suggestions" aria-expanded="false" aria-controls="collapse-plain-lang-suggestions">
+                Consider substituting simpler words and phrases
+              </button>
+            </h2>
+            <div id="collapse-plain-lang-suggestions" class="accordion-collapse collapse" aria-labelledby="heading-plain-lang-suggestions" data-bs-parent="#suggestionsAccordion">
+              <div class="accordion-body">
+                We refer to <a href="https://www.plainlanguage.gov/guidelines/words/">plainlanguage.gov</a>'s list of common
+                complex words and simple replacements. Apply judgement and read the words in context to make sure the replacements
+                still make sense.
+                <div class="text-break">
+                <table class="table">
+                    <tr>
+                      <th scope="col">Original sentence</th>
+                      <th scope="col">Revised sentence</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                  {% for suggestion in stats.get("plain language suggestions", []) %}
+                  <tr>
+                    <td>
+                      {{ suggestion[0] | safe }}
+                    </td>
+                    <td>{{ highlight_text(suggestion[1], suggestion[2]) | safe  }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>             
+                </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          {% if stats.get("neutral gender suggestions") %}
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="heading-neutral-gender">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-neutral-gender" aria-expanded="false" aria-controls="collapse-neutral-gender">
+                Consider replacing gendered words
+              </button>
+            </h2>
+            <div id="collapse-neutral-gender" class="accordion-collapse collapse" aria-labelledby="heading-neutral-gender" data-bs-parent="#suggestionsAccordion">
+              <div class="accordion-body">
+                <div class="text-break">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Original sentence</th>
+                      <th scope="col">Revised sentence</th>
+                    </tr>
+                    </thead>               
+                {% for suggestion in stats.get("neutral gender suggestions", []) %}
+                <tr>
+                  <td>
+                    {{ suggestion[0] | safe }}
+                  </td>
+                  <td>{{ highlight_text(suggestion[1], suggestion[2]) | safe  }}</td>
+                </tr>
+                {% endfor %}
+                
+                </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          {% if stats.get("citations") %}
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="heading-citations">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-citations" aria-expanded="false" aria-controls="collapse-citations">
+                Consider removing citations
+              </button>
+            </h2>
+            <div id="collapse-citations" class="accordion-collapse collapse" aria-labelledby="heading-citations" data-bs-parent="#suggestionsAccordion">
+              <div class="accordion-body">
+                <ul>
+                {% for suggestion in stats.get("citations") %}
+                <li>
+                  {{ suggestion  }}
+                </li>
+                {% endfor %}
+                </ul>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+
+      </div>            
       </section>     
 
       <footer class="bg-light py-3">

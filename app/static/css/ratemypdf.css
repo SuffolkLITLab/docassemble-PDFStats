@@ -100,11 +100,11 @@ body {
 
 .checkmark-image {
   position: relative;
-  background-image: url("../img/checkmark-hand-drawn-outline.svg");
+  background-image: url("../img/pdf_analyzing_illustration.svg");
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center center;
-  height: 200px;
+  height: 230px;
   margin-top: -300px;
   z-index: 2;
 }  
@@ -355,4 +355,39 @@ font-weight: bold;
   margin-bottom: 0.5rem;
   font-size: 1rem;
   color: #555;
+}
+
+
+.bar {
+  height: 30px;
+  display: flex;
+  border-style: solid!important;
+  border: 1px;
+}
+.bar-segment {
+  height: 100%;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  margin-right: 10px;
+}
+.legend-color {
+  width: 20px;
+  height: 20px;
+  margin-right: 5px;
+}
+
+
+/* Highlight text to change */
+.highlight {
+  background-color: rgba(255, 243, 128, 0.7);
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.highlight:hover {
+  background-color: rgba(255, 243, 128, 1);
 }
