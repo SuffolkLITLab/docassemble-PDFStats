@@ -139,24 +139,15 @@
                 </div>
                 
                 <div class="circle-container">
-                  {% for num in range(floor(stats.get("time to answer")[0]/60)) %}
-                    {% if loop.last %}
-                      <div class="circle">
-                        <svg viewBox="0 0 36 36">
-                          <circle cx="18" cy="18" r="15.91549430918954" fill="transparent" stroke="#007bff" stroke-width="4"></circle>
-                        </svg>
-                        <span class="circle-label">{{ loop.index }}h</span>
-                      </div>
-                    {% else %}
+                  {% if floor(stats.get("time to answer")[0]/60) > 0 %}
                       <!-- Full circle for each hour -->
                       <div class="circle">
                         <svg viewBox="0 0 36 36">
                           <circle cx="18" cy="18" r="15.91549430918954" fill="transparent" stroke="#007bff" stroke-width="4"></circle>
                         </svg>
-                        <span class="circle-label">&nbsp;</span>
+                        <span class="circle-label">{{ floor(stats.get("time to answer")[0]/60) }}hr{% if floor(stats.get("time to answer")[0]/60) > 1 %}s{% endif %}</span>
                       </div>
-                    {% endif %}
-                  {% endfor %}
+                  {% endif %}
                   {% if stats.get("time to answer")[0] % 60 > 3 %}
                   <!-- Partial circle for minutes -->
                   <div class="circle">

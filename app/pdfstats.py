@@ -164,7 +164,8 @@ def download_file(file_hash):
 @bp.route("/view/<file_hash>")
 def view_stats(file_hash):
     if not (file_hash and valid_hash(file_hash)):
-        raise Exception("Not a valid filename")
+        # allow to upload file again
+        return redirect("/")
     to_dir = os.path.join(current_app.config["PDFSTAT_UPLOAD_FOLDER"], file_hash)
     with open(os.path.join(to_dir, "stats.json")) as stats_file:
         stats = json.loads(stats_file.read())

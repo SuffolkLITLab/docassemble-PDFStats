@@ -100,11 +100,11 @@ body {
 
 .checkmark-image {
   position: relative;
-  background-image: url("../img/checkmark-hand-drawn-outline.svg");
+  background-image: url("../img/pdf_analyzing_illustration.svg");
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center center;
-  height: 200px;
+  height: 230px;
   margin-top: -300px;
   z-index: 2;
 }  
@@ -361,6 +361,8 @@ font-weight: bold;
 .bar {
   height: 30px;
   display: flex;
+  border-style: solid!important;
+  border: 1px;
 }
 .bar-segment {
   height: 100%;
